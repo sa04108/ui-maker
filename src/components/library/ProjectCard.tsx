@@ -1,0 +1,55 @@
+import { useState, useEffect } from 'react';
+import { Trash2, ChevronRight } from 'lucide-react';
+import type { DesignProject } from '@/types';
+
+interface ProjectCardProps {
+  project: DesignProject;
+  isSelected: boolean;
+  onSelect: () => void;
+  onDelete: () => void;
+}
+
+export function ProjectCard({ project, isSelected, onSelect, onDelete }: ProjectCardProps) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const url = URL.createObjectURL(project.referenceImage);
+    setImageUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [project.referenceImage]);
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete();
+  };
+
+  return (
+    <div
+      onClick={onSelect}
+      className={`group relative flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+        isSelected
+          ? 'bg-blue-600/20 border border-blue-500'
+          : 'bg-gray-800 border border-gray-700 hover:border-gray-600'
+      }`}
+    >
+      {imageUrl && (
+        <div className="w-12 h-12 rounded bg-gray-700 overflow-hidden flex-shrink-0">
+          <img src={imageUrl} alt={project.name} className="w-full h-full object-cover" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <h4 className="font-medium text-gray-200 truncate">{project.name}</h4>
+        <p className="text-xs text-gray-500">
+          {project.generatedIcons.length} icons
+        </p>
+      </div>
+      <button
+        onClick={handleDelete}
+        className="p-1.5 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        <Trash2 size={14} />
+      </button>
+      <ChevronRight size={16} className="text-gray-500" />
+    </div>
+  );
+}
