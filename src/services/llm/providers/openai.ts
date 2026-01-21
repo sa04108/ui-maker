@@ -1,4 +1,4 @@
-import type { DesignSpecification } from '@/types';
+import type { DesignSpecification, OpenAIModel } from '@/types';
 import { IMAGE_ANALYSIS_PROMPT, getSvgGenerationPrompt } from '../prompts';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
@@ -6,7 +6,8 @@ const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 export async function analyzeImageWithOpenAI(
   apiKey: string,
   imageBase64: string,
-  mimeType: string
+  mimeType: string,
+  model: OpenAIModel = 'gpt-4o'
 ): Promise<Partial<DesignSpecification>> {
   const response = await fetch(OPENAI_API_URL, {
     method: 'POST',
@@ -15,7 +16,7 @@ export async function analyzeImageWithOpenAI(
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model,
       messages: [
         {
           role: 'user',
@@ -31,7 +32,7 @@ export async function analyzeImageWithOpenAI(
         },
       ],
       temperature: 0,
-      max_tokens: 1000,
+      max_tokens: 1500,
     }),
   });
 
@@ -63,7 +64,8 @@ export async function generateSvgsWithOpenAI(
   apiKey: string,
   specification: DesignSpecification,
   subject: string,
-  seed: number
+  seed: number,
+  model: OpenAIModel = 'gpt-4o'
 ): Promise<string[]> {
   const prompt = getSvgGenerationPrompt(JSON.stringify(specification, null, 2), subject, 5);
 
@@ -74,7 +76,7 @@ export async function generateSvgsWithOpenAI(
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model,
       messages: [
         {
           role: 'user',
@@ -83,7 +85,7 @@ export async function generateSvgsWithOpenAI(
       ],
       temperature: 0,
       seed: seed,
-      max_tokens: 4000,
+      max_tokens: 6000,
     }),
   });
 

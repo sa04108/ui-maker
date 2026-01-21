@@ -1,4 +1,4 @@
-import type { DesignSpecification } from '@/types';
+import type { DesignSpecification, AnthropicModel } from '@/types';
 import { IMAGE_ANALYSIS_PROMPT, getSvgGenerationPrompt } from '../prompts';
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
@@ -6,7 +6,8 @@ const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 export async function analyzeImageWithAnthropic(
   apiKey: string,
   imageBase64: string,
-  mimeType: string
+  mimeType: string,
+  model: AnthropicModel = 'claude-sonnet-4-20250514'
 ): Promise<Partial<DesignSpecification>> {
   const response = await fetch(ANTHROPIC_API_URL, {
     method: 'POST',
@@ -17,8 +18,8 @@ export async function analyzeImageWithAnthropic(
       'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
+      model,
+      max_tokens: 1500,
       messages: [
         {
           role: 'user',
@@ -69,7 +70,8 @@ export async function generateSvgsWithAnthropic(
   apiKey: string,
   specification: DesignSpecification,
   subject: string,
-  _seed: number // Anthropic은 seed 대신 temperature=0으로 일관성 보장
+  _seed: number, // Anthropic은 seed 대신 temperature=0으로 일관성 보장
+  model: AnthropicModel = 'claude-sonnet-4-20250514'
 ): Promise<string[]> {
   const prompt = getSvgGenerationPrompt(JSON.stringify(specification, null, 2), subject, 5);
 
@@ -82,8 +84,8 @@ export async function generateSvgsWithAnthropic(
       'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
+      model,
+      max_tokens: 6000,
       messages: [
         {
           role: 'user',

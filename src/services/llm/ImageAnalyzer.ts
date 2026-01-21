@@ -1,4 +1,4 @@
-import type { DesignSpecification, LLMProvider } from '@/types';
+import type { DesignSpecification, LLMProvider, LLMModel, OpenAIModel, AnthropicModel } from '@/types';
 import { analyzeImageWithOpenAI } from './providers/openai';
 import { analyzeImageWithAnthropic } from './providers/anthropic';
 
@@ -27,16 +27,17 @@ async function fileToBase64(file: File): Promise<{ base64: string; mimeType: str
 export async function analyzeImage(
   file: File,
   apiKey: string,
-  provider: LLMProvider
+  provider: LLMProvider,
+  model: LLMModel
 ): Promise<DesignSpecification> {
   const { base64, mimeType } = await fileToBase64(file);
 
   let analysisResult: Partial<DesignSpecification>;
 
   if (provider === 'openai') {
-    analysisResult = await analyzeImageWithOpenAI(apiKey, base64, mimeType);
+    analysisResult = await analyzeImageWithOpenAI(apiKey, base64, mimeType, model as OpenAIModel);
   } else {
-    analysisResult = await analyzeImageWithAnthropic(apiKey, base64, mimeType);
+    analysisResult = await analyzeImageWithAnthropic(apiKey, base64, mimeType, model as AnthropicModel);
   }
 
   const now = new Date();

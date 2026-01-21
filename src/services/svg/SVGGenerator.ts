@@ -1,4 +1,4 @@
-import type { DesignSpecification, LLMProvider } from '@/types';
+import type { DesignSpecification, LLMProvider, LLMModel, OpenAIModel, AnthropicModel } from '@/types';
 import { generateSvgsWithOpenAI, generateSvgsWithAnthropic } from '../llm/providers';
 
 // 문자열 해시 함수 (seed 생성용)
@@ -16,15 +16,16 @@ export async function generateSvgs(
   specification: DesignSpecification,
   subject: string,
   apiKey: string,
-  provider: LLMProvider
+  provider: LLMProvider,
+  model: LLMModel
 ): Promise<string[]> {
   // seed = hash(specificationId + subject) for consistency
   const seed = hashString(`${specification.id}_${subject}`);
 
   if (provider === 'openai') {
-    return generateSvgsWithOpenAI(apiKey, specification, subject, seed);
+    return generateSvgsWithOpenAI(apiKey, specification, subject, seed, model as OpenAIModel);
   } else {
-    return generateSvgsWithAnthropic(apiKey, specification, subject, seed);
+    return generateSvgsWithAnthropic(apiKey, specification, subject, seed, model as AnthropicModel);
   }
 }
 

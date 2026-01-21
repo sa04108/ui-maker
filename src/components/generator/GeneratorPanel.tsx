@@ -11,7 +11,7 @@ import { ExportPanel } from './ExportPanel';
 import { SpecificationView } from './SpecificationView';
 
 export function GeneratorPanel() {
-  const { apiKey, provider } = useSettingsStore();
+  const { apiKey, provider, model } = useSettingsStore();
   const { createProject, currentProject, addIconToProject } = useProjectStore();
   const {
     uploadedImage,
@@ -40,7 +40,7 @@ export function GeneratorPanel() {
     setAnalysisError(null);
 
     try {
-      const spec = await analyzeImage(uploadedImage, apiKey, provider);
+      const spec = await analyzeImage(uploadedImage, apiKey, provider, model);
       setSpecification(spec);
 
       // 새 프로젝트 생성
@@ -59,7 +59,7 @@ export function GeneratorPanel() {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [uploadedImage, apiKey, provider, setIsAnalyzing, setAnalysisError, createProject]);
+  }, [uploadedImage, apiKey, provider, model, setIsAnalyzing, setAnalysisError, createProject]);
 
   const handleGenerate = useCallback(async () => {
     const spec = specification || currentProject?.specification;
@@ -70,7 +70,7 @@ export function GeneratorPanel() {
     setGeneratedSvgs([]);
 
     try {
-      const svgs = await generateSvgs(spec, subject, apiKey, provider);
+      const svgs = await generateSvgs(spec, subject, apiKey, provider, model);
       const normalizedSvgs = svgs.map(normalizeSvg);
       setGeneratedSvgs(normalizedSvgs);
     } catch (error) {
@@ -78,7 +78,7 @@ export function GeneratorPanel() {
     } finally {
       setIsGenerating(false);
     }
-  }, [specification, currentProject, subject, apiKey, provider, setIsGenerating, setGenerationError, setGeneratedSvgs]);
+  }, [specification, currentProject, subject, apiKey, provider, model, setIsGenerating, setGenerationError, setGeneratedSvgs]);
 
   const handleSaveIcon = useCallback(async () => {
     const projectId = currentProject?.id;
