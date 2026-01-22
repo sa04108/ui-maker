@@ -6,10 +6,17 @@ interface ProjectCardProps {
   project: DesignProject;
   isSelected: boolean;
   onSelect: () => void;
+  onViewInGenerator: () => void;
   onDelete: () => void;
 }
 
-export const ProjectCard = memo(function ProjectCard({ project, isSelected, onSelect, onDelete }: ProjectCardProps) {
+export const ProjectCard = memo(function ProjectCard({
+  project,
+  isSelected,
+  onSelect,
+  onViewInGenerator,
+  onDelete,
+}: ProjectCardProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const urlRef = useRef<string | null>(null);
 
@@ -35,6 +42,11 @@ export const ProjectCard = memo(function ProjectCard({ project, isSelected, onSe
     onDelete();
   };
 
+  const handleViewInGenerator = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onViewInGenerator();
+  };
+
   return (
     <div
       onClick={onSelect}
@@ -55,13 +67,21 @@ export const ProjectCard = memo(function ProjectCard({ project, isSelected, onSe
           {project.generatedIcons.length} icons
         </p>
       </div>
-      <button
-        onClick={handleDelete}
-        className="p-1.5 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-      >
-        <Trash2 size={14} />
-      </button>
-      <ChevronRight size={16} className="text-gray-500" />
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handleViewInGenerator}
+          className="px-2 py-1 text-xs text-blue-300 bg-blue-900/30 border border-blue-700/50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          View in Generator
+        </button>
+        <button
+          onClick={handleDelete}
+          className="p-1.5 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <Trash2 size={14} />
+        </button>
+        <ChevronRight size={16} className="text-gray-500" />
+      </div>
     </div>
   );
 });

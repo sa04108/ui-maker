@@ -5,6 +5,8 @@ interface ImageDimensions {
   height: number;
 }
 
+type ActiveProjectSource = 'analysis' | 'library' | null;
+
 interface GeneratorState {
   // 이미지 업로드 상태
   uploadedImage: File | null;
@@ -22,6 +24,10 @@ interface GeneratorState {
   selectedSvgIndex: number | null;
   generationError: string | null;
 
+  // Generator에 표시 중인 프로젝트
+  activeProjectId: string | null;
+  activeProjectSource: ActiveProjectSource;
+
   // 액션
   setUploadedImage: (file: File | null) => void;
   setImageDimensions: (dimensions: ImageDimensions | null) => void;
@@ -32,6 +38,8 @@ interface GeneratorState {
   setGeneratedSvgs: (svgs: string[]) => void;
   setSelectedSvgIndex: (index: number | null) => void;
   setGenerationError: (error: string | null) => void;
+  setActiveProject: (projectId: string | null, source: ActiveProjectSource) => void;
+  clearActiveProject: () => void;
   reset: () => void;
 }
 
@@ -46,6 +54,8 @@ export const useGeneratorStore = create<GeneratorState>((set, get) => ({
   generatedSvgs: [],
   selectedSvgIndex: null,
   generationError: null,
+  activeProjectId: null,
+  activeProjectSource: null,
 
   setUploadedImage: (file: File | null) => {
     // 이전 URL 해제
@@ -56,7 +66,13 @@ export const useGeneratorStore = create<GeneratorState>((set, get) => ({
 
     if (file) {
       const url = URL.createObjectURL(file);
-      set({ uploadedImage: file, uploadedImageUrl: url, imageDimensions: null });
+      set({
+        uploadedImage: file,
+        uploadedImageUrl: url,
+        imageDimensions: null,
+        activeProjectId: null,
+        activeProjectSource: null,
+      });
     } else {
       set({ uploadedImage: null, uploadedImageUrl: null, imageDimensions: null });
     }
@@ -71,6 +87,16 @@ export const useGeneratorStore = create<GeneratorState>((set, get) => ({
   setGeneratedSvgs: (svgs: string[]) => set({ generatedSvgs: svgs, selectedSvgIndex: null }),
   setSelectedSvgIndex: (index: number | null) => set({ selectedSvgIndex: index }),
   setGenerationError: (error: string | null) => set({ generationError: error }),
+  setActiveProject: (projectId: string | null, source: ActiveProjectSource) =>
+    set({
+      activeProjectId: projectId,
+      activeProjectSource: projectId ? source : null,
+    }),
+  clearActiveProject: () =>
+    set({
+      activeProjectId: null,
+      activeProjectSource: null,
+    }),
 
   reset: () => {
     const prevUrl = get().uploadedImageUrl;
@@ -88,6 +114,8 @@ export const useGeneratorStore = create<GeneratorState>((set, get) => ({
       generatedSvgs: [],
       selectedSvgIndex: null,
       generationError: null,
+      activeProjectId: null,
+      activeProjectSource: null,
     });
   },
 }));

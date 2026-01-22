@@ -14,7 +14,7 @@ type GeneratorPhase = 'upload' | 'analyze' | 'generate';
 
 export function GeneratorPanel() {
   const { apiKey, provider, model } = useSettingsStore();
-  const { createProject, currentProject, addIconToProject, updateProject } = useProjectStore();
+  const { projects, createProject, addIconToProject, updateProject } = useProjectStore();
   const {
     uploadedImage,
     uploadedImageUrl,
@@ -32,24 +32,39 @@ export function GeneratorPanel() {
     setSelectedSvgIndex,
     generationError,
     setGenerationError,
+    activeProjectId,
+    activeProjectSource,
+    setActiveProject,
+    clearActiveProject,
   } = useGeneratorStore();
 
   const [specification, setSpecification] = useState<DesignSpecification | null>(null);
   const [projectImageUrl, setProjectImageUrl] = useState<string | null>(null);
 
+  const activeProject = useMemo(
+    () => projects.find((project) => project.id === activeProjectId) || null,
+    [projects, activeProjectId]
+  );
+
+  useEffect(() => {
+    if (activeProjectId && !activeProject) {
+      clearActiveProject();
+    }
+  }, [activeProjectId, activeProject, clearActiveProject]);
+
   // 프로젝트의 referenceImage URL 생성
   useEffect(() => {
-    if (currentProject?.referenceImage) {
-      const url = URL.createObjectURL(currentProject.referenceImage);
+    if (activeProject?.referenceImage) {
+      const url = URL.createObjectURL(activeProject.referenceImage);
       setProjectImageUrl(url);
       return () => URL.revokeObjectURL(url);
     } else {
       setProjectImageUrl(null);
     }
-  }, [currentProject?.referenceImage]);
+  }, [activeProject?.referenceImage]);
 
   // 현재 표시할 이미지 URL (업로드된 이미지 또는 프로젝트 이미지)
-  const displayImageUrl = uploadedImageUrl || projectImageUrl;
+  const displayImageUrl = activeProject ? projectImageUrl : uploadedImageUrl;
 
   // 현재 단계 결정: 프로젝트가 선택된 경우 프로젝트 상태에 따라 결정
   const getPhase = (): GeneratorPhase => {
@@ -57,11 +72,11 @@ export function GeneratorPanel() {
     if (generatedSvgs.length > 0) return 'generate';
 
     // 프로젝트가 선택된 경우
-    if (currentProject) {
+    if (activeProject) {
       // 저장된 아이콘이 있으면 generate 단계
-      if (currentProject.generatedIcons.length > 0) return 'generate';
+      if (activeProject.generatedIcons.length > 0) return 'generate';
       // specification이 있으면 analyze 단계
-      if (currentProject.specification) return 'analyze';
+      if (activeProject.specification) return 'analyze';
     }
 
     // 새로 분석한 specification이 있으면 analyze 단계
@@ -71,16 +86,16 @@ export function GeneratorPanel() {
   };
 
   const phase = getPhase();
-  const activeSpec = specification || currentProject?.specification;
+  const activeSpec = activeProject?.specification || specification;
 
   // 표시할 아이콘들: 방금 생성된 것 또는 프로젝트에 저장된 것
   const displaySvgs = useMemo(() => {
     if (generatedSvgs.length > 0) return generatedSvgs;
-    if (currentProject?.generatedIcons) {
-      return currentProject.generatedIcons.map(icon => icon.svgCode);
+    if (activeProject?.generatedIcons) {
+      return activeProject.generatedIcons.map(icon => icon.svgCode);
     }
     return [];
-  }, [generatedSvgs, currentProject?.generatedIcons]);
+  }, [generatedSvgs, activeProject?.generatedIcons]);
 
   const handleAnalyze = useCallback(async () => {
     if (!uploadedImage || !apiKey) return;
@@ -107,17 +122,21 @@ export function GeneratorPanel() {
         updatedAt: new Date(),
       };
       await createProject(project);
+      setActiveProject(project.id, 'analysis');
     } catch (error) {
       setAnalysisError(error instanceof Error ? error.message : 'Analysis failed');
     } finally {
       setIsAnalyzing(false);
     }
-  }, [uploadedImage, apiKey, provider, model, setIsAnalyzing, setAnalysisError, createProject]);
+  }, [uploadedImage, apiKey, provider, model, setIsAnalyzing, setAnalysisError, createProject, setActiveProject]);
 
   const handleGenerate = useCallback(async () => {
-    const spec = specification || currentProject?.specification;
-    const projectId = currentProject?.id;
-    if (!spec || !subject || !apiKey || !projectId) return;
+    const spec = activeProject?.specification || specification;
+    const isFromLibrary = activeProjectSource === 'library';
+    const baseProject = activeProject;
+    const projectId = baseProject?.id || null;
+    const referenceImage = baseProject?.referenceImage || uploadedImage;
+    if (!spec || !subject || !apiKey || (!projectId && !referenceImage)) return;
 
     setIsGenerating(true);
     setGenerationError(null);
@@ -128,34 +147,71 @@ export function GeneratorPanel() {
       const normalizedSvgs = svgs.map(normalizeSvg);
       setGeneratedSvgs(normalizedSvgs);
 
-      // 모든 생성된 아이콘을 자동으로 프로젝트에 저장
-      for (let i = 0; i < normalizedSvgs.length; i++) {
-        const svgCode = normalizedSvgs[i];
-        if (!svgCode) continue;
-        const icon: GeneratedIcon = {
-          id: `icon_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 9)}`,
-          projectId,
+      const iconProjectId =
+        isFromLibrary || !projectId
+          ? `proj_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+          : projectId;
+
+      const generatedIcons: GeneratedIcon[] = normalizedSvgs
+        .map((svgCode, index) => ({
+          id: `icon_${Date.now()}_${index}_${Math.random().toString(36).substring(2, 9)}`,
+          projectId: iconProjectId,
           subject,
           svgCode,
           llmModel: model,
           createdAt: new Date(),
-        };
-        await addIconToProject(projectId, icon);
-      }
+        }))
+        .filter((icon) => icon.svgCode);
 
-      // 프로젝트 이름 업데이트: {이미지명} - {Subject}({모델명})
-      if (currentProject) {
-        const imageName = currentProject.name.split(' - ')[0]; // 기존 이미지명 추출
+      if (isFromLibrary || !projectId) {
+        const baseName = baseProject?.name.split(' - ')[0] || uploadedImage?.name.replace(/\.[^/.]+$/, '');
+        const modelShortName = getModelShortName(model);
+        const projectName = baseName ? `${baseName} - ${subject}(${modelShortName})` : `Untitled - ${subject}(${modelShortName})`;
+        const newProject: DesignProject = {
+          id: iconProjectId,
+          name: projectName,
+          referenceImage: referenceImage as Blob,
+          specification: spec,
+          generatedIcons: generatedIcons,
+          llmModel: model,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        await createProject(newProject);
+        setActiveProject(iconProjectId, 'analysis');
+      } else if (baseProject) {
+        for (const icon of generatedIcons) {
+          await addIconToProject(baseProject.id, icon);
+        }
+
+        // 프로젝트 이름 업데이트: {이미지명} - {Subject}({모델명})
+        const imageName = baseProject.name.split(' - ')[0]; // 기존 이미지명 추출
         const modelShortName = getModelShortName(model);
         const newName = `${imageName} - ${subject}(${modelShortName})`;
-        await updateProject({ ...currentProject, name: newName });
+        await updateProject({ ...baseProject, name: newName });
       }
     } catch (error) {
       setGenerationError(error instanceof Error ? error.message : 'Generation failed');
     } finally {
       setIsGenerating(false);
     }
-  }, [specification, currentProject, subject, apiKey, provider, model, setIsGenerating, setGenerationError, setGeneratedSvgs, updateProject, addIconToProject]);
+  }, [
+    specification,
+    activeProject,
+    activeProjectSource,
+    subject,
+    apiKey,
+    provider,
+    model,
+    uploadedImage,
+    setIsGenerating,
+    setGenerationError,
+    setGeneratedSvgs,
+    updateProject,
+    addIconToProject,
+    createProject,
+    setActiveProject,
+  ]);
 
   const selectedSvg = selectedSvgIndex !== null ? displaySvgs[selectedSvgIndex] : null;
 
@@ -311,8 +367,8 @@ export function GeneratorPanel() {
 
         <div className="bg-gray-800 rounded-lg p-4">
           <h3 className="text-sm font-medium text-gray-300 mb-3">
-            {currentProject?.generatedIcons && currentProject.generatedIcons.length > 0 && generatedSvgs.length === 0
-              ? `Saved Icons (${currentProject.generatedIcons.length})`
+            {activeProject?.generatedIcons && activeProject.generatedIcons.length > 0 && generatedSvgs.length === 0
+              ? `Saved Icons (${activeProject.generatedIcons.length})`
               : 'Generated Icons (Select One)'}
           </h3>
           <SvgPreview

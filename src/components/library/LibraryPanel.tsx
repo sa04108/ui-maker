@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Pencil, Check, X } from 'lucide-react';
-import { useProjectStore, useGeneratorStore } from '@/store';
+import { useProjectStore, useGeneratorStore, useUiStore } from '@/store';
 import { ProjectCard } from './ProjectCard';
 import { IconGallery } from './IconGallery';
 import { SpecificationView } from '@/components/generator';
@@ -16,7 +16,16 @@ export function LibraryPanel() {
     deleteIconFromProject,
     updateProject,
   } = useProjectStore();
-  const { reset: resetGenerator } = useGeneratorStore();
+  const {
+    activeProjectId,
+    setActiveProject,
+    clearActiveProject,
+    setGeneratedSvgs,
+    setSelectedSvgIndex,
+    setGenerationError,
+    setAnalysisError,
+  } = useGeneratorStore();
+  const { setActiveTab } = useUiStore();
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
@@ -62,26 +71,51 @@ export function LibraryPanel() {
   const handleSelectProject = useCallback(
     (project: typeof currentProject) => {
       if (currentProject?.id === project?.id) {
-        // 이미 선택된 프로젝트 클릭 시 선택 해제 + Generator 리셋
+        // 이미 선택된 프로젝트 클릭 시 선택 해제
         clearCurrentProject();
-        resetGenerator();
       } else {
         setCurrentProject(project);
       }
     },
-    [currentProject, clearCurrentProject, setCurrentProject, resetGenerator]
+    [currentProject, clearCurrentProject, setCurrentProject]
   );
 
-  // 프로젝트 삭제 시 Generator 리셋
+  const handleViewInGenerator = useCallback(
+    (project: typeof currentProject) => {
+      if (!project) return;
+      setGeneratedSvgs([]);
+      setSelectedSvgIndex(null);
+      setGenerationError(null);
+      setAnalysisError(null);
+      setCurrentProject(project);
+      setActiveProject(project.id, 'library');
+      setActiveTab('generator');
+    },
+    [
+      setGeneratedSvgs,
+      setSelectedSvgIndex,
+      setGenerationError,
+      setAnalysisError,
+      setCurrentProject,
+      setActiveProject,
+      setActiveTab,
+    ]
+  );
+
+  // 프로젝트 삭제 시 Generator에서 보고 있던 경우만 해제
   const handleDeleteProject = useCallback(
     async (projectId: string) => {
       const isCurrentProject = currentProject?.id === projectId;
+      const isActiveInGenerator = activeProjectId === projectId;
       await deleteProject(projectId);
       if (isCurrentProject) {
-        resetGenerator();
+        clearCurrentProject();
+      }
+      if (isActiveInGenerator) {
+        clearActiveProject();
       }
     },
-    [currentProject, deleteProject, resetGenerator]
+    [currentProject, activeProjectId, deleteProject, clearCurrentProject, clearActiveProject]
   );
 
   return (
@@ -101,6 +135,7 @@ export function LibraryPanel() {
                 project={project}
                 isSelected={currentProject?.id === project.id}
                 onSelect={() => handleSelectProject(project)}
+                onViewInGenerator={() => handleViewInGenerator(project)}
                 onDelete={() => handleDeleteProject(project.id)}
               />
             ))}

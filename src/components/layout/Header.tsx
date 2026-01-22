@@ -10,15 +10,17 @@ export function Header() {
   const [isHoveringProject, setIsHoveringProject] = useState(false);
   const { apiKey, model } = useSettingsStore();
   const { currentProject, clearCurrentProject } = useProjectStore();
-  const { reset: resetGenerator } = useGeneratorStore();
+  const { activeProjectId, clearActiveProject } = useGeneratorStore();
 
   // 현재 모델의 표시 이름 가져오기
   const currentModelInfo = ALL_MODELS.find((m) => m.id === model);
   const modelDisplayName = currentModelInfo?.name || model;
 
   const handleClearProject = () => {
+    if (activeProjectId && currentProject?.id === activeProjectId) {
+      clearActiveProject();
+    }
     clearCurrentProject();
-    resetGenerator();
   };
 
   return (

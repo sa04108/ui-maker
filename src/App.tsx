@@ -1,13 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Header } from '@/components/layout';
 import { GeneratorPanel } from '@/components/generator';
 import { LibraryPanel } from '@/components/library';
-import { useSettingsStore, useProjectStore } from '@/store';
-
-type Tab = 'generator' | 'library';
+import { useSettingsStore, useProjectStore, useUiStore } from '@/store';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('generator');
+  const { activeTab, setActiveTab } = useUiStore();
   const { loadSettings, isLoaded: settingsLoaded } = useSettingsStore();
   const { loadProjects } = useProjectStore();
 
