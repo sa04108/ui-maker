@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { Button, Input } from '@/components/common';
 import { ImageUploader } from '@/components/upload';
@@ -17,6 +17,7 @@ export function GeneratorPanel() {
   const { createProject, currentProject, addIconToProject, updateProject } = useProjectStore();
   const {
     uploadedImage,
+    uploadedImageUrl,
     subject,
     setSubject,
     isAnalyzing,
@@ -34,16 +35,52 @@ export function GeneratorPanel() {
   } = useGeneratorStore();
 
   const [specification, setSpecification] = useState<DesignSpecification | null>(null);
+  const [projectImageUrl, setProjectImageUrl] = useState<string | null>(null);
 
-  // 현재 단계 결정
+  // 프로젝트의 referenceImage URL 생성
+  useEffect(() => {
+    if (currentProject?.referenceImage) {
+      const url = URL.createObjectURL(currentProject.referenceImage);
+      setProjectImageUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setProjectImageUrl(null);
+    }
+  }, [currentProject?.referenceImage]);
+
+  // 현재 표시할 이미지 URL (업로드된 이미지 또는 프로젝트 이미지)
+  const displayImageUrl = uploadedImageUrl || projectImageUrl;
+
+  // 현재 단계 결정: 프로젝트가 선택된 경우 프로젝트 상태에 따라 결정
   const getPhase = (): GeneratorPhase => {
+    // 방금 생성된 SVG가 있으면 generate 단계
     if (generatedSvgs.length > 0) return 'generate';
-    if (specification || currentProject?.specification) return 'analyze';
+
+    // 프로젝트가 선택된 경우
+    if (currentProject) {
+      // 저장된 아이콘이 있으면 generate 단계
+      if (currentProject.generatedIcons.length > 0) return 'generate';
+      // specification이 있으면 analyze 단계
+      if (currentProject.specification) return 'analyze';
+    }
+
+    // 새로 분석한 specification이 있으면 analyze 단계
+    if (specification) return 'analyze';
+
     return 'upload';
   };
 
   const phase = getPhase();
   const activeSpec = specification || currentProject?.specification;
+
+  // 표시할 아이콘들: 방금 생성된 것 또는 프로젝트에 저장된 것
+  const displaySvgs = useMemo(() => {
+    if (generatedSvgs.length > 0) return generatedSvgs;
+    if (currentProject?.generatedIcons) {
+      return currentProject.generatedIcons.map(icon => icon.svgCode);
+    }
+    return [];
+  }, [generatedSvgs, currentProject?.generatedIcons]);
 
   const handleAnalyze = useCallback(async () => {
     if (!uploadedImage || !apiKey) return;
@@ -92,12 +129,14 @@ export function GeneratorPanel() {
       setGeneratedSvgs(normalizedSvgs);
 
       // 모든 생성된 아이콘을 자동으로 프로젝트에 저장
-      for (const svg of normalizedSvgs) {
+      for (let i = 0; i < normalizedSvgs.length; i++) {
+        const svgCode = normalizedSvgs[i];
+        if (!svgCode) continue;
         const icon: GeneratedIcon = {
-          id: `icon_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+          id: `icon_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 9)}`,
           projectId,
           subject,
-          svgCode: svg,
+          svgCode,
           llmModel: model,
           createdAt: new Date(),
         };
@@ -118,7 +157,23 @@ export function GeneratorPanel() {
     }
   }, [specification, currentProject, subject, apiKey, provider, model, setIsGenerating, setGenerationError, setGeneratedSvgs, updateProject, addIconToProject]);
 
-  const selectedSvg = selectedSvgIndex !== null ? generatedSvgs[selectedSvgIndex] : null;
+  const selectedSvg = selectedSvgIndex !== null ? displaySvgs[selectedSvgIndex] : null;
+
+  // 레퍼런스 이미지 표시 컴포넌트
+  const ReferenceImageDisplay = () => {
+    if (displayImageUrl) {
+      return (
+        <div className="relative bg-gray-800 rounded-lg overflow-hidden" style={{ maxWidth: '300px', maxHeight: '300px' }}>
+          <img
+            src={displayImageUrl}
+            alt="Reference"
+            className="w-full h-full object-contain"
+          />
+        </div>
+      );
+    }
+    return <ImageUploader />;
+  };
 
   // Phase 1: 업로드 단계 - Reference Image 영역만 가운데에 표시
   if (phase === 'upload') {
@@ -160,11 +215,16 @@ export function GeneratorPanel() {
     );
   }
 
-  // Phase 2: 분석 완료 - Design Specification + Icon Subject 영역 가운데
+  // Phase 2: 분석 완료 - Reference Image + Design Specification + Icon Subject 영역 가운데
   if (phase === 'analyze') {
     return (
       <div className="h-full flex items-start justify-center pt-8 overflow-auto">
         <div className="w-1/2 max-w-2xl space-y-4">
+          <div>
+            <h3 className="text-sm font-medium text-gray-300 mb-2">Reference Image</h3>
+            <ReferenceImageDisplay />
+          </div>
+
           <div className="bg-gray-800 rounded-lg p-4">
             <h3 className="text-sm font-medium text-gray-300 mb-3">Design Specification</h3>
             <SpecificationView specification={activeSpec || null} />
@@ -211,7 +271,7 @@ export function GeneratorPanel() {
       <div className="space-y-4">
         <div>
           <h3 className="text-sm font-medium text-gray-300 mb-2">Reference Image</h3>
-          <ImageUploader />
+          <ReferenceImageDisplay />
         </div>
 
         <div className="bg-gray-800 rounded-lg p-4">
@@ -250,9 +310,13 @@ export function GeneratorPanel() {
         )}
 
         <div className="bg-gray-800 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-gray-300 mb-3">Generated Icons (Select One)</h3>
+          <h3 className="text-sm font-medium text-gray-300 mb-3">
+            {currentProject?.generatedIcons && currentProject.generatedIcons.length > 0 && generatedSvgs.length === 0
+              ? `Saved Icons (${currentProject.generatedIcons.length})`
+              : 'Generated Icons (Select One)'}
+          </h3>
           <SvgPreview
-            svgs={generatedSvgs}
+            svgs={displaySvgs}
             selectedIndex={selectedSvgIndex}
             onSelect={setSelectedSvgIndex}
           />
