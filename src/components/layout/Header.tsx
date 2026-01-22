@@ -9,18 +9,19 @@ export function Header() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHoveringProject, setIsHoveringProject] = useState(false);
   const { apiKey, model } = useSettingsStore();
-  const { currentProject, clearCurrentProject } = useProjectStore();
+  const { projects } = useProjectStore();
   const { activeProjectId, clearActiveProject } = useGeneratorStore();
 
   // 현재 모델의 표시 이름 가져오기
   const currentModelInfo = ALL_MODELS.find((m) => m.id === model);
   const modelDisplayName = currentModelInfo?.name || model;
 
+  const activeProject = activeProjectId
+    ? projects.find((project) => project.id === activeProjectId) || null
+    : null;
+
   const handleClearProject = () => {
-    if (activeProjectId && currentProject?.id === activeProjectId) {
-      clearActiveProject();
-    }
-    clearCurrentProject();
+    clearActiveProject();
   };
 
   return (
@@ -29,14 +30,14 @@ export function Header() {
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-gray-100">UI Maker</h1>
           <span className="text-xs text-gray-500">Button Icon Generator</span>
-          {currentProject && (
+          {activeProject && (
             <div
               className="group flex items-center gap-2 px-3 py-1.5 bg-blue-900/40 border border-blue-700/50 rounded text-sm text-blue-300"
               onMouseEnter={() => setIsHoveringProject(true)}
               onMouseLeave={() => setIsHoveringProject(false)}
             >
-              <span className="text-gray-400">Selected Project:</span>
-              <span className="font-medium truncate max-w-[200px]">{currentProject.name}</span>
+              <span className="text-gray-400">Active Project:</span>
+              <span className="font-medium truncate max-w-[200px]">{activeProject.name}</span>
               {isHoveringProject && (
                 <button
                   onClick={handleClearProject}

@@ -87,7 +87,6 @@ export function LibraryPanel() {
       setSelectedSvgIndex(null);
       setGenerationError(null);
       setAnalysisError(null);
-      setCurrentProject(project);
       setActiveProject(project.id, 'library');
       setActiveTab('generator');
     },
@@ -96,7 +95,6 @@ export function LibraryPanel() {
       setSelectedSvgIndex,
       setGenerationError,
       setAnalysisError,
-      setCurrentProject,
       setActiveProject,
       setActiveTab,
     ]
