@@ -2,11 +2,17 @@ import { useState } from 'react';
 import { Settings, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/common';
 import { SettingsModal } from '@/components/settings';
-import { useSettingsStore } from '@/store';
+import { useSettingsStore, useProjectStore } from '@/store';
+import { ALL_MODELS } from '@/types/settings';
 
 export function Header() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { apiKey } = useSettingsStore();
+  const { apiKey, model } = useSettingsStore();
+  const { currentProject } = useProjectStore();
+
+  // 현재 모델의 표시 이름 가져오기
+  const currentModelInfo = ALL_MODELS.find((m) => m.id === model);
+  const modelDisplayName = currentModelInfo?.name || model;
 
   return (
     <>
@@ -14,6 +20,12 @@ export function Header() {
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-gray-100">UI Maker</h1>
           <span className="text-xs text-gray-500">Button Icon Generator</span>
+          {currentProject && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-900/40 border border-blue-700/50 rounded text-sm text-blue-300">
+              <span className="text-gray-400">Selected Project:</span>
+              <span className="font-medium truncate max-w-[200px]">{currentProject.name}</span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -23,6 +35,12 @@ export function Header() {
               <span>API key required</span>
             </div>
           )}
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-gray-700/50 hover:bg-gray-700 border border-gray-600 rounded text-sm text-gray-200 transition-colors"
+          >
+            <span className="font-medium">{modelDisplayName}</span>
+          </button>
           <Button
             variant="ghost"
             size="sm"

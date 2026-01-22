@@ -1,7 +1,10 @@
+import { useState, useCallback } from 'react';
+import { Pencil, Check, X } from 'lucide-react';
 import { useProjectStore } from '@/store';
 import { ProjectCard } from './ProjectCard';
 import { IconGallery } from './IconGallery';
 import { SpecificationView } from '@/components/generator';
+import { ALL_MODELS } from '@/types/settings';
 
 export function LibraryPanel() {
   const {
@@ -10,7 +13,48 @@ export function LibraryPanel() {
     setCurrentProject,
     deleteProject,
     deleteIconFromProject,
+    updateProject,
   } = useProjectStore();
+
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState('');
+
+  // LLM 모델의 표시 이름 가져오기
+  const getModelDisplayName = (modelId: string | undefined) => {
+    if (!modelId) return null;
+    const modelInfo = ALL_MODELS.find((m) => m.id === modelId);
+    return modelInfo?.name || modelId;
+  };
+
+  const handleStartEdit = useCallback(() => {
+    if (currentProject) {
+      setEditedName(currentProject.name);
+      setIsEditingName(true);
+    }
+  }, [currentProject]);
+
+  const handleSaveEdit = useCallback(async () => {
+    if (currentProject && editedName.trim()) {
+      await updateProject({ ...currentProject, name: editedName.trim() });
+      setIsEditingName(false);
+    }
+  }, [currentProject, editedName, updateProject]);
+
+  const handleCancelEdit = useCallback(() => {
+    setIsEditingName(false);
+    setEditedName('');
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        handleSaveEdit();
+      } else if (e.key === 'Escape') {
+        handleCancelEdit();
+      }
+    },
+    [handleSaveEdit, handleCancelEdit]
+  );
 
   return (
     <div className="grid grid-cols-3 gap-6 h-full">
@@ -41,9 +85,51 @@ export function LibraryPanel() {
         {currentProject ? (
           <>
             <div className="bg-gray-800 rounded-lg p-4">
-              <h3 className="text-lg font-medium text-gray-200 mb-1">
-                {currentProject.name}
-              </h3>
+              <div className="flex items-center gap-2 mb-1">
+                {isEditingName ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <input
+                      type="text"
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      className="flex-1 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-lg font-medium text-gray-200 focus:outline-none focus:border-blue-500"
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleSaveEdit}
+                      className="p-1.5 text-green-400 hover:text-green-300 hover:bg-gray-700 rounded transition-colors"
+                    >
+                      <Check size={16} />
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="p-1.5 text-red-400 hover:text-red-300 hover:bg-gray-700 rounded transition-colors"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <h3 className="text-lg font-medium text-gray-200 truncate max-w-[calc(100%-40px)]">
+                      {currentProject.name}
+                    </h3>
+                    <button
+                      onClick={handleStartEdit}
+                      className="p-1.5 text-gray-400 hover:text-gray-200 hover:bg-gray-700 rounded transition-colors flex-shrink-0"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                  </>
+                )}
+              </div>
+              {currentProject.llmModel && (
+                <div className="mb-1">
+                  <span className="inline-block px-2 py-0.5 bg-purple-900/40 border border-purple-700/50 rounded text-xs text-purple-300">
+                    {getModelDisplayName(currentProject.llmModel)}
+                  </span>
+                </div>
+              )}
               <p className="text-xs text-gray-500">
                 Created: {currentProject.createdAt.toLocaleDateString()}
               </p>
