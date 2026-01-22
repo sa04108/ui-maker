@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { Sparkles, Loader2, Save } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Sparkles, Loader2 } from 'lucide-react';
 import { Button, Input } from '@/components/common';
 import { ImageUploader } from '@/components/upload';
 import { useGeneratorStore, useSettingsStore, useProjectStore } from '@/store';
@@ -34,8 +34,6 @@ export function GeneratorPanel() {
   } = useGeneratorStore();
 
   const [specification, setSpecification] = useState<DesignSpecification | null>(null);
-  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // 현재 단계 결정
   const getPhase = (): GeneratorPhase => {
@@ -46,21 +44,6 @@ export function GeneratorPanel() {
 
   const phase = getPhase();
   const activeSpec = specification || currentProject?.specification;
-
-  // 이미지 업로드시 크기 측정
-  useEffect(() => {
-    if (uploadedImage) {
-      const url = URL.createObjectURL(uploadedImage);
-      const img = new Image();
-      img.onload = () => {
-        setImageDimensions({ width: img.width, height: img.height });
-        URL.revokeObjectURL(url);
-      };
-      img.src = url;
-    } else {
-      setImageDimensions(null);
-    }
-  }, [uploadedImage]);
 
   const handleAnalyze = useCallback(async () => {
     if (!uploadedImage || !apiKey) return;
@@ -96,7 +79,8 @@ export function GeneratorPanel() {
 
   const handleGenerate = useCallback(async () => {
     const spec = specification || currentProject?.specification;
-    if (!spec || !subject || !apiKey) return;
+    const projectId = currentProject?.id;
+    if (!spec || !subject || !apiKey || !projectId) return;
 
     setIsGenerating(true);
     setGenerationError(null);
@@ -106,6 +90,19 @@ export function GeneratorPanel() {
       const svgs = await generateSvgs(spec, subject, apiKey, provider, model);
       const normalizedSvgs = svgs.map(normalizeSvg);
       setGeneratedSvgs(normalizedSvgs);
+
+      // 모든 생성된 아이콘을 자동으로 프로젝트에 저장
+      for (const svg of normalizedSvgs) {
+        const icon: GeneratedIcon = {
+          id: `icon_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+          projectId,
+          subject,
+          svgCode: svg,
+          llmModel: model,
+          createdAt: new Date(),
+        };
+        await addIconToProject(projectId, icon);
+      }
 
       // 프로젝트 이름 업데이트: {이미지명} - {Subject}({모델명})
       if (currentProject) {
@@ -119,34 +116,18 @@ export function GeneratorPanel() {
     } finally {
       setIsGenerating(false);
     }
-  }, [specification, currentProject, subject, apiKey, provider, model, setIsGenerating, setGenerationError, setGeneratedSvgs, updateProject]);
-
-  const handleSaveIcon = useCallback(async () => {
-    const projectId = currentProject?.id;
-    if (selectedSvgIndex === null || !projectId || !generatedSvgs[selectedSvgIndex]) return;
-
-    const icon: GeneratedIcon = {
-      id: `icon_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      projectId,
-      subject,
-      svgCode: generatedSvgs[selectedSvgIndex],
-      llmModel: model,
-      createdAt: new Date(),
-    };
-
-    await addIconToProject(projectId, icon);
-  }, [currentProject, selectedSvgIndex, generatedSvgs, subject, model, addIconToProject]);
+  }, [specification, currentProject, subject, apiKey, provider, model, setIsGenerating, setGenerationError, setGeneratedSvgs, updateProject, addIconToProject]);
 
   const selectedSvg = selectedSvgIndex !== null ? generatedSvgs[selectedSvgIndex] : null;
 
   // Phase 1: 업로드 단계 - Reference Image 영역만 가운데에 표시
   if (phase === 'upload') {
     return (
-      <div ref={containerRef} className="h-full flex items-center justify-center">
+      <div className="h-full flex items-center justify-center">
         <div className="w-1/3 max-w-md space-y-4">
           <div>
             <h3 className="text-sm font-medium text-gray-300 mb-2">Reference Image</h3>
-            <ImageUploader maxSize={imageDimensions} />
+            <ImageUploader />
           </div>
 
           {uploadedImage && (
@@ -182,7 +163,7 @@ export function GeneratorPanel() {
   // Phase 2: 분석 완료 - Design Specification + Icon Subject 영역 가운데
   if (phase === 'analyze') {
     return (
-      <div ref={containerRef} className="h-full flex items-start justify-center pt-8 overflow-auto">
+      <div className="h-full flex items-start justify-center pt-8 overflow-auto">
         <div className="w-1/2 max-w-2xl space-y-4">
           <div className="bg-gray-800 rounded-lg p-4">
             <h3 className="text-sm font-medium text-gray-300 mb-3">Design Specification</h3>
@@ -225,12 +206,12 @@ export function GeneratorPanel() {
 
   // Phase 3: 생성 완료 - 좌우 분할 레이아웃
   return (
-    <div ref={containerRef} className="grid grid-cols-2 gap-6 h-full overflow-auto">
+    <div className="grid grid-cols-2 gap-6 h-full overflow-auto">
       {/* Left Column - Reference Image + Design Specification */}
       <div className="space-y-4">
         <div>
           <h3 className="text-sm font-medium text-gray-300 mb-2">Reference Image</h3>
-          <ImageUploader maxSize={imageDimensions} />
+          <ImageUploader />
         </div>
 
         <div className="bg-gray-800 rounded-lg p-4">
@@ -280,13 +261,7 @@ export function GeneratorPanel() {
         {selectedSvg && (
           <>
             <div className="bg-gray-800 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-gray-300">Selected Icon</h3>
-                <Button size="sm" variant="secondary" onClick={handleSaveIcon}>
-                  <Save size={14} className="mr-1" />
-                  Save to Project
-                </Button>
-              </div>
+              <h3 className="text-sm font-medium text-gray-300 mb-3">Selected Icon</h3>
               <div className="flex justify-center">
                 <div
                   className="w-24 h-24 p-2 bg-gray-900 rounded-lg"

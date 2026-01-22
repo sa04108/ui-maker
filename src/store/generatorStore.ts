@@ -1,9 +1,15 @@
 import { create } from 'zustand';
 
+interface ImageDimensions {
+  width: number;
+  height: number;
+}
+
 interface GeneratorState {
   // 이미지 업로드 상태
   uploadedImage: File | null;
   uploadedImageUrl: string | null;
+  imageDimensions: ImageDimensions | null;
 
   // 분석 상태
   isAnalyzing: boolean;
@@ -18,6 +24,7 @@ interface GeneratorState {
 
   // 액션
   setUploadedImage: (file: File | null) => void;
+  setImageDimensions: (dimensions: ImageDimensions | null) => void;
   setSubject: (subject: string) => void;
   setIsAnalyzing: (isAnalyzing: boolean) => void;
   setAnalysisError: (error: string | null) => void;
@@ -31,6 +38,7 @@ interface GeneratorState {
 export const useGeneratorStore = create<GeneratorState>((set, get) => ({
   uploadedImage: null,
   uploadedImageUrl: null,
+  imageDimensions: null,
   isAnalyzing: false,
   analysisError: null,
   subject: '',
@@ -48,11 +56,13 @@ export const useGeneratorStore = create<GeneratorState>((set, get) => ({
 
     if (file) {
       const url = URL.createObjectURL(file);
-      set({ uploadedImage: file, uploadedImageUrl: url });
+      set({ uploadedImage: file, uploadedImageUrl: url, imageDimensions: null });
     } else {
-      set({ uploadedImage: null, uploadedImageUrl: null });
+      set({ uploadedImage: null, uploadedImageUrl: null, imageDimensions: null });
     }
   },
+
+  setImageDimensions: (dimensions: ImageDimensions | null) => set({ imageDimensions: dimensions }),
 
   setSubject: (subject: string) => set({ subject }),
   setIsAnalyzing: (isAnalyzing: boolean) => set({ isAnalyzing }),
@@ -70,6 +80,7 @@ export const useGeneratorStore = create<GeneratorState>((set, get) => ({
     set({
       uploadedImage: null,
       uploadedImageUrl: null,
+      imageDimensions: null,
       isAnalyzing: false,
       analysisError: null,
       subject: '',

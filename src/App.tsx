@@ -55,9 +55,14 @@ function App() {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 p-6">
-          {activeTab === 'generator' ? <GeneratorPanel /> : <LibraryPanel />}
+        {/* Content - 두 패널을 모두 렌더링하고 CSS로 숨김 처리하여 깜빡임 방지 */}
+        <div className="flex-1 p-6 relative">
+          <div className={activeTab === 'generator' ? 'h-full' : 'hidden'}>
+            <GeneratorPanel />
+          </div>
+          <div className={activeTab === 'library' ? 'h-full' : 'hidden'}>
+            <LibraryPanel />
+          </div>
         </div>
       </div>
     </div>

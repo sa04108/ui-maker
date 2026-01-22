@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { Trash2, ChevronRight } from 'lucide-react';
 import type { DesignProject } from '@/types';
 
@@ -9,13 +9,25 @@ interface ProjectCardProps {
   onDelete: () => void;
 }
 
-export function ProjectCard({ project, isSelected, onSelect, onDelete }: ProjectCardProps) {
+export const ProjectCard = memo(function ProjectCard({ project, isSelected, onSelect, onDelete }: ProjectCardProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const urlRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // 이미 URL이 있으면 재생성하지 않음
+    if (urlRef.current) {
+      setImageUrl(urlRef.current);
+      return;
+    }
     const url = URL.createObjectURL(project.referenceImage);
+    urlRef.current = url;
     setImageUrl(url);
-    return () => URL.revokeObjectURL(url);
+    return () => {
+      if (urlRef.current) {
+        URL.revokeObjectURL(urlRef.current);
+        urlRef.current = null;
+      }
+    };
   }, [project.referenceImage]);
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -52,4 +64,4 @@ export function ProjectCard({ project, isSelected, onSelect, onDelete }: Project
       <ChevronRight size={16} className="text-gray-500" />
     </div>
   );
-}
+});

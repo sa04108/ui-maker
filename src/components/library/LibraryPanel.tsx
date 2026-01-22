@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Pencil, Check, X } from 'lucide-react';
-import { useProjectStore } from '@/store';
+import { useProjectStore, useGeneratorStore } from '@/store';
 import { ProjectCard } from './ProjectCard';
 import { IconGallery } from './IconGallery';
 import { SpecificationView } from '@/components/generator';
@@ -11,10 +11,12 @@ export function LibraryPanel() {
     projects,
     currentProject,
     setCurrentProject,
+    clearCurrentProject,
     deleteProject,
     deleteIconFromProject,
     updateProject,
   } = useProjectStore();
+  const { reset: resetGenerator } = useGeneratorStore();
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState('');
@@ -56,6 +58,32 @@ export function LibraryPanel() {
     [handleSaveEdit, handleCancelEdit]
   );
 
+  // 프로젝트 선택/해제 토글
+  const handleSelectProject = useCallback(
+    (project: typeof currentProject) => {
+      if (currentProject?.id === project?.id) {
+        // 이미 선택된 프로젝트 클릭 시 선택 해제 + Generator 리셋
+        clearCurrentProject();
+        resetGenerator();
+      } else {
+        setCurrentProject(project);
+      }
+    },
+    [currentProject, clearCurrentProject, setCurrentProject, resetGenerator]
+  );
+
+  // 프로젝트 삭제 시 Generator 리셋
+  const handleDeleteProject = useCallback(
+    async (projectId: string) => {
+      const isCurrentProject = currentProject?.id === projectId;
+      await deleteProject(projectId);
+      if (isCurrentProject) {
+        resetGenerator();
+      }
+    },
+    [currentProject, deleteProject, resetGenerator]
+  );
+
   return (
     <div className="grid grid-cols-3 gap-6 h-full">
       {/* Projects List */}
@@ -72,8 +100,8 @@ export function LibraryPanel() {
                 key={project.id}
                 project={project}
                 isSelected={currentProject?.id === project.id}
-                onSelect={() => setCurrentProject(project)}
-                onDelete={() => deleteProject(project.id)}
+                onSelect={() => handleSelectProject(project)}
+                onDelete={() => handleDeleteProject(project.id)}
               />
             ))}
           </div>
