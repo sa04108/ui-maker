@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { Trash2, ChevronRight } from 'lucide-react';
 import type { DesignProject } from '@/types';
 
@@ -6,21 +6,45 @@ interface ProjectCardProps {
   project: DesignProject;
   isSelected: boolean;
   onSelect: () => void;
+  onViewInGenerator: () => void;
   onDelete: () => void;
 }
 
-export function ProjectCard({ project, isSelected, onSelect, onDelete }: ProjectCardProps) {
+export const ProjectCard = memo(function ProjectCard({
+  project,
+  isSelected,
+  onSelect,
+  onViewInGenerator,
+  onDelete,
+}: ProjectCardProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const urlRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // 이미 URL이 있으면 재생성하지 않음
+    if (urlRef.current) {
+      setImageUrl(urlRef.current);
+      return;
+    }
     const url = URL.createObjectURL(project.referenceImage);
+    urlRef.current = url;
     setImageUrl(url);
-    return () => URL.revokeObjectURL(url);
+    return () => {
+      if (urlRef.current) {
+        URL.revokeObjectURL(urlRef.current);
+        urlRef.current = null;
+      }
+    };
   }, [project.referenceImage]);
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete();
+  };
+
+  const handleViewInGenerator = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onViewInGenerator();
   };
 
   return (
@@ -43,13 +67,21 @@ export function ProjectCard({ project, isSelected, onSelect, onDelete }: Project
           {project.generatedIcons.length} icons
         </p>
       </div>
-      <button
-        onClick={handleDelete}
-        className="p-1.5 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-      >
-        <Trash2 size={14} />
-      </button>
-      <ChevronRight size={16} className="text-gray-500" />
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handleViewInGenerator}
+          className="px-2 py-1 text-xs text-blue-300 bg-blue-900/30 border border-blue-700/50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          View in Generator
+        </button>
+        <button
+          onClick={handleDelete}
+          className="p-1.5 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <Trash2 size={14} />
+        </button>
+        <ChevronRight size={16} className="text-gray-500" />
+      </div>
     </div>
   );
-}
+});

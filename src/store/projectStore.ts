@@ -12,6 +12,7 @@ interface ProjectState {
   updateProject: (project: DesignProject) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   setCurrentProject: (project: DesignProject | null) => void;
+  clearCurrentProject: () => void;
   addIconToProject: (projectId: string, icon: GeneratedIcon) => Promise<void>;
   deleteIconFromProject: (projectId: string, iconId: string) => Promise<void>;
 }
@@ -55,6 +56,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   setCurrentProject: (project: DesignProject | null) => {
     set({ currentProject: project });
+  },
+
+  clearCurrentProject: () => {
+    set({ currentProject: null });
   },
 
   addIconToProject: async (projectId: string, icon: GeneratedIcon) => {

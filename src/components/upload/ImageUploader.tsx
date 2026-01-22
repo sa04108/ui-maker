@@ -1,10 +1,43 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect, useMemo } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { useGeneratorStore } from '@/store';
 
 export function ImageUploader() {
-  const { uploadedImage, uploadedImageUrl, setUploadedImage } = useGeneratorStore();
+  const { uploadedImage, uploadedImageUrl, setUploadedImage, imageDimensions, setImageDimensions } = useGeneratorStore();
   const [isDragging, setIsDragging] = useState(false);
+
+  // 이미지 로드 시 크기 측정 (한 번만)
+  useEffect(() => {
+    if (uploadedImageUrl && !imageDimensions) {
+      const img = new Image();
+      img.onload = () => {
+        setImageDimensions({ width: img.width, height: img.height });
+      };
+      img.src = uploadedImageUrl;
+    }
+  }, [uploadedImageUrl, imageDimensions, setImageDimensions]);
+
+  // 이미지 스타일 계산 (메모이제이션)
+  const imageStyle = useMemo(() => {
+    if (!imageDimensions) return { width: '100%', aspectRatio: '1' };
+
+    const containerMaxWidth = 300;
+    const containerMaxHeight = 300;
+    const imgRatio = imageDimensions.width / imageDimensions.height;
+
+    let displayWidth = Math.min(imageDimensions.width, containerMaxWidth);
+    let displayHeight = displayWidth / imgRatio;
+
+    if (displayHeight > containerMaxHeight) {
+      displayHeight = containerMaxHeight;
+      displayWidth = displayHeight * imgRatio;
+    }
+
+    return {
+      width: `${displayWidth}px`,
+      height: `${displayHeight}px`,
+    };
+  }, [imageDimensions]);
 
   const handleFile = useCallback(
     (file: File) => {
@@ -49,7 +82,10 @@ export function ImageUploader() {
 
   if (uploadedImage && uploadedImageUrl) {
     return (
-      <div className="relative w-full aspect-square bg-gray-800 rounded-lg overflow-hidden">
+      <div
+        className="relative bg-gray-800 rounded-lg overflow-hidden mx-auto"
+        style={imageStyle}
+      >
         <img
           src={uploadedImageUrl}
           alt="Reference"
@@ -61,7 +97,7 @@ export function ImageUploader() {
         >
           <X size={16} />
         </button>
-        <div className="absolute bottom-2 left-2 px-2 py-1 bg-gray-900/80 rounded text-xs text-gray-300">
+        <div className="absolute bottom-2 left-2 px-2 py-1 bg-gray-900/80 rounded text-xs text-gray-300 max-w-[calc(100%-16px)] truncate">
           {uploadedImage.name}
         </div>
       </div>
