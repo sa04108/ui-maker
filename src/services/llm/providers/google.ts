@@ -24,7 +24,7 @@ export async function analyzeImageWithGoogle(
   apiKey: string,
   imageBase64: string,
   mimeType: string,
-  model: GoogleModel = 'gemini-3'
+  model: GoogleModel = 'gemini-2.5-flash'
 ): Promise<Partial<DesignSpecification>> {
   const response = await fetch(buildGoogleUrl(model, apiKey), {
     method: 'POST',
@@ -81,7 +81,7 @@ export async function generateSvgsWithGoogle(
   specification: DesignSpecification,
   subject: string,
   _seed: number,
-  model: GoogleModel = 'gemini-3'
+  model: GoogleModel = 'gemini-2.5-flash'
 ): Promise<string[]> {
   const prompt = getSvgGenerationPrompt(JSON.stringify(specification, null, 2), subject, 5);
 

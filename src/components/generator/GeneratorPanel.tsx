@@ -409,7 +409,9 @@ function getModelShortName(model: string): string {
     'gpt-4.1': 'GPT-4.1',
     'claude-sonnet-4-20250514': 'Sonnet 4',
     'claude-opus-4-20250514': 'Opus 4',
-    'gemini-3': 'Gemini 3',
+    'gemini-2.5-flash': 'Gemini 2.5 Flash',
+    'gemini-2.5-pro': 'Gemini 2.5 Pro',
+    'gemini-2.0-flash': 'Gemini 2.0 Flash',
   };
   return modelMap[model] || model;
 }
