@@ -1,6 +1,7 @@
-import type { DesignSpecification, LLMProvider, LLMModel, OpenAIModel, AnthropicModel } from '@/types';
+import type { DesignSpecification, LLMProvider, LLMModel, OpenAIModel, AnthropicModel, GoogleModel } from '@/types';
 import { analyzeImageWithOpenAI } from './providers/openai';
 import { analyzeImageWithAnthropic } from './providers/anthropic';
+import { analyzeImageWithGoogle } from './providers/google';
 
 function generateId(): string {
   return `spec_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -36,8 +37,10 @@ export async function analyzeImage(
 
   if (provider === 'openai') {
     analysisResult = await analyzeImageWithOpenAI(apiKey, base64, mimeType, model as OpenAIModel);
-  } else {
+  } else if (provider === 'anthropic') {
     analysisResult = await analyzeImageWithAnthropic(apiKey, base64, mimeType, model as AnthropicModel);
+  } else {
+    analysisResult = await analyzeImageWithGoogle(apiKey, base64, mimeType, model as GoogleModel);
   }
 
   const now = new Date();

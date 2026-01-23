@@ -1,9 +1,10 @@
-export type LLMProvider = 'openai' | 'anthropic';
+export type LLMProvider = 'openai' | 'anthropic' | 'google';
 
 export type OpenAIModel = 'gpt-4o' | 'gpt-4o-mini' | 'o4-mini' | 'gpt-4.1';
 export type AnthropicModel = 'claude-sonnet-4-20250514' | 'claude-opus-4-20250514';
+export type GoogleModel = 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'gemini-2.0-flash';
 
-export type LLMModel = OpenAIModel | AnthropicModel;
+export type LLMModel = OpenAIModel | AnthropicModel | GoogleModel;
 
 export interface ModelOption {
   id: LLMModel;
@@ -25,14 +26,24 @@ export const ANTHROPIC_MODELS: ModelOption[] = [
   { id: 'claude-opus-4-20250514', name: 'Claude Opus 4', provider: 'anthropic', description: 'Most capable model', tier: 'premium' },
 ];
 
-export const ALL_MODELS: ModelOption[] = [...OPENAI_MODELS, ...ANTHROPIC_MODELS];
+export const GOOGLE_MODELS: ModelOption[] = [
+  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'google', description: 'Fast multimodal model for general use', tier: 'standard' },
+  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', provider: 'google', description: 'Most capable Gemini model', tier: 'premium' },
+  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'google', description: 'Reliable fast model for everyday tasks', tier: 'standard' },
+];
+
+export const ALL_MODELS: ModelOption[] = [...OPENAI_MODELS, ...ANTHROPIC_MODELS, ...GOOGLE_MODELS];
 
 export function getModelsForProvider(provider: LLMProvider): ModelOption[] {
-  return provider === 'openai' ? OPENAI_MODELS : ANTHROPIC_MODELS;
+  if (provider === 'openai') return OPENAI_MODELS;
+  if (provider === 'anthropic') return ANTHROPIC_MODELS;
+  return GOOGLE_MODELS;
 }
 
 export function getDefaultModelForProvider(provider: LLMProvider): LLMModel {
-  return provider === 'openai' ? 'gpt-4o' : 'claude-sonnet-4-20250514';
+  if (provider === 'openai') return 'gpt-4o';
+  if (provider === 'anthropic') return 'claude-sonnet-4-20250514';
+  return 'gemini-2.5-flash';
 }
 
 export interface Settings {

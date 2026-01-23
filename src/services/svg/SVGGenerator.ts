@@ -1,5 +1,5 @@
-import type { DesignSpecification, LLMProvider, LLMModel, OpenAIModel, AnthropicModel } from '@/types';
-import { generateSvgsWithOpenAI, generateSvgsWithAnthropic } from '../llm/providers';
+import type { DesignSpecification, LLMProvider, LLMModel, OpenAIModel, AnthropicModel, GoogleModel } from '@/types';
+import { generateSvgsWithOpenAI, generateSvgsWithAnthropic, generateSvgsWithGoogle } from '../llm/providers';
 
 // 문자열 해시 함수 (seed 생성용)
 function hashString(str: string): number {
@@ -24,9 +24,11 @@ export async function generateSvgs(
 
   if (provider === 'openai') {
     return generateSvgsWithOpenAI(apiKey, specification, subject, seed, model as OpenAIModel);
-  } else {
+  }
+  if (provider === 'anthropic') {
     return generateSvgsWithAnthropic(apiKey, specification, subject, seed, model as AnthropicModel);
   }
+  return generateSvgsWithGoogle(apiKey, specification, subject, seed, model as GoogleModel);
 }
 
 // SVG 유효성 검사

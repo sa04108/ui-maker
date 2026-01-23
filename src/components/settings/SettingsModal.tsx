@@ -12,6 +12,7 @@ interface SettingsModalProps {
 const providerOptions = [
   { value: 'openai', label: 'OpenAI' },
   { value: 'anthropic', label: 'Anthropic' },
+  { value: 'google', label: 'Google Gemini' },
 ];
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
@@ -72,7 +73,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           type="password"
           value={localApiKey}
           onChange={(e) => setLocalApiKey(e.target.value)}
-          placeholder={localProvider === 'openai' ? 'sk-...' : 'sk-ant-...'}
+          placeholder={
+            localProvider === 'openai'
+              ? 'sk-...'
+              : localProvider === 'anthropic'
+                ? 'sk-ant-...'
+                : 'AIza...'
+          }
         />
         <p className="text-xs text-gray-500">
           Your API key is stored locally in your browser and never sent to our servers.
