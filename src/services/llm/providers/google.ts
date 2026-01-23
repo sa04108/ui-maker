@@ -20,6 +20,12 @@ function extractTextFromResponse(data: {
   return text.trim() ? text : null;
 }
 
+function extractSvgBlocks(content: string): string[] {
+  const matches = content.match(/<svg[\s\S]*?<\/svg>/g);
+  if (!matches) return [];
+  return matches.map((svg) => svg.trim()).filter(Boolean);
+}
+
 export async function analyzeImageWithGoogle(
   apiKey: string,
   imageBase64: string,
@@ -127,6 +133,10 @@ export async function generateSvgsWithGoogle(
     }
     return svgs;
   } catch {
+    const fallbackSvgs = extractSvgBlocks(content);
+    if (fallbackSvgs.length > 0) {
+      return fallbackSvgs;
+    }
     throw new Error('Failed to parse Google Gemini response as SVG array');
   }
 }
