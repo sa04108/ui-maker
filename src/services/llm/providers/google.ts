@@ -72,7 +72,7 @@ export async function analyzeImageWithGoogle(
     }
     return JSON.parse(jsonMatch[0]);
   } catch {
-    throw new Error('Failed to parse Google Gemini response as JSON. 저렴한 모델을 사용 중인지 확인해봐.');
+    throw new Error('Failed to parse Google Gemini response as JSON.');
   }
 }
 
@@ -127,6 +127,6 @@ export async function generateSvgsWithGoogle(
     }
     return svgs;
   } catch {
-    throw new Error('Failed to parse Google Gemini response as SVG array. 저렴한 모델을 사용 중인지 확인해봐.');
+    throw new Error('Failed to parse Google Gemini response as SVG array.');
   }
 }
