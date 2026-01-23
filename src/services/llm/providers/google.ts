@@ -20,6 +20,15 @@ function extractTextFromResponse(data: {
   return text.trim() ? text : null;
 }
 
+function extractJsonBlock(content: string): string | null {
+  const fencedMatch = content.match(/```json\s*([\s\S]*?)\s*```/i);
+  if (fencedMatch?.[1]) {
+    return fencedMatch[1].trim();
+  }
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  return jsonMatch ? jsonMatch[0] : null;
+}
+
 function extractSvgBlocks(content: string): string[] {
   const matches = content.match(/<svg[\s\S]*?<\/svg>/g);
   if (!matches) return [];
@@ -94,11 +103,11 @@ export async function analyzeImageWithGoogle(
   }
 
   try {
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
+    const jsonBlock = extractJsonBlock(content);
+    if (!jsonBlock) {
       throw new Error('No JSON found in response');
     }
-    return JSON.parse(jsonMatch[0]);
+    return JSON.parse(jsonBlock);
   } catch {
     throw new Error('Failed to parse Google Gemini response as JSON');
   }
