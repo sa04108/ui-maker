@@ -20,43 +20,6 @@ function extractTextFromResponse(data: {
   return text.trim() ? text : null;
 }
 
-function extractJsonBlock(content: string): string | null {
-  const fencedMatch = content.match(/```json\s*([\s\S]*?)\s*```/i);
-  if (fencedMatch?.[1]) {
-    return fencedMatch[1].trim();
-  }
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  return jsonMatch ? jsonMatch[0] : null;
-}
-
-function extractSvgBlocks(content: string): string[] {
-  const matches = content.match(/<svg[\s\S]*?<\/svg>/g);
-  if (!matches) return [];
-  return matches.map((svg) => svg.trim()).filter(Boolean);
-}
-
-function sanitizeSvg(svg: string): string | null {
-  const match = svg.match(/<svg[\s\S]*?<\/svg>/);
-  if (!match) return null;
-  let cleaned = match[0].trim();
-
-  // Ensure xmlns is present for consistent parsing.
-  if (!/xmlns=/.test(cleaned)) {
-    cleaned = cleaned.replace(
-      /<svg\b/,
-      '<svg xmlns="http://www.w3.org/2000/svg"'
-    );
-  }
-
-  // Fix unquoted viewBox values like viewBox=0 0 24 24.
-  cleaned = cleaned.replace(
-    /\sviewBox=([0-9.\- ]+)(?=[\s>])/g,
-    ' viewBox="$1"'
-  );
-
-  return cleaned;
-}
-
 export async function analyzeImageWithGoogle(
   apiKey: string,
   imageBase64: string,
@@ -103,13 +66,13 @@ export async function analyzeImageWithGoogle(
   }
 
   try {
-    const jsonBlock = extractJsonBlock(content);
-    if (!jsonBlock) {
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
       throw new Error('No JSON found in response');
     }
-    return JSON.parse(jsonBlock);
+    return JSON.parse(jsonMatch[0]);
   } catch {
-    throw new Error('Failed to parse Google Gemini response as JSON');
+    throw new Error('Failed to parse Google Gemini response as JSON. 저렴한 모델을 사용 중인지 확인해봐.');
   }
 }
 
@@ -162,23 +125,8 @@ export async function generateSvgsWithGoogle(
     if (!Array.isArray(svgs) || svgs.length === 0) {
       throw new Error('Invalid SVG array in response');
     }
-    const sanitized = svgs
-      .map((svg) => (typeof svg === 'string' ? sanitizeSvg(svg) : null))
-      .filter((svg): svg is string => Boolean(svg));
-    if (sanitized.length === 0) {
-      throw new Error('Invalid SVG array in response');
-    }
-    return sanitized;
+    return svgs;
   } catch {
-    const fallbackSvgs = extractSvgBlocks(content);
-    if (fallbackSvgs.length > 0) {
-      const sanitized = fallbackSvgs
-        .map((svg) => sanitizeSvg(svg))
-        .filter((svg): svg is string => Boolean(svg));
-      if (sanitized.length > 0) {
-        return sanitized;
-      }
-    }
-    throw new Error('Failed to parse Google Gemini response as SVG array');
+    throw new Error('Failed to parse Google Gemini response as SVG array. 저렴한 모델을 사용 중인지 확인해봐.');
   }
 }
