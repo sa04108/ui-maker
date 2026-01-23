@@ -1,9 +1,10 @@
-export type LLMProvider = 'openai' | 'anthropic';
+export type LLMProvider = 'openai' | 'anthropic' | 'google';
 
 export type OpenAIModel = 'gpt-4o' | 'gpt-4o-mini' | 'o4-mini' | 'gpt-4.1';
 export type AnthropicModel = 'claude-sonnet-4-20250514' | 'claude-opus-4-20250514';
+export type GoogleModel = 'gemini-3';
 
-export type LLMModel = OpenAIModel | AnthropicModel;
+export type LLMModel = OpenAIModel | AnthropicModel | GoogleModel;
 
 export interface ModelOption {
   id: LLMModel;
@@ -25,14 +26,22 @@ export const ANTHROPIC_MODELS: ModelOption[] = [
   { id: 'claude-opus-4-20250514', name: 'Claude Opus 4', provider: 'anthropic', description: 'Most capable model', tier: 'premium' },
 ];
 
-export const ALL_MODELS: ModelOption[] = [...OPENAI_MODELS, ...ANTHROPIC_MODELS];
+export const GOOGLE_MODELS: ModelOption[] = [
+  { id: 'gemini-3', name: 'Gemini 3', provider: 'google', description: 'Next-generation Gemini model', tier: 'premium' },
+];
+
+export const ALL_MODELS: ModelOption[] = [...OPENAI_MODELS, ...ANTHROPIC_MODELS, ...GOOGLE_MODELS];
 
 export function getModelsForProvider(provider: LLMProvider): ModelOption[] {
-  return provider === 'openai' ? OPENAI_MODELS : ANTHROPIC_MODELS;
+  if (provider === 'openai') return OPENAI_MODELS;
+  if (provider === 'anthropic') return ANTHROPIC_MODELS;
+  return GOOGLE_MODELS;
 }
 
 export function getDefaultModelForProvider(provider: LLMProvider): LLMModel {
-  return provider === 'openai' ? 'gpt-4o' : 'claude-sonnet-4-20250514';
+  if (provider === 'openai') return 'gpt-4o';
+  if (provider === 'anthropic') return 'claude-sonnet-4-20250514';
+  return 'gemini-3';
 }
 
 export interface Settings {
