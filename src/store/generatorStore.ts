@@ -27,6 +27,7 @@ interface GeneratorState {
   // Generator에 표시 중인 프로젝트
   activeProjectId: string | null;
   activeProjectSource: ActiveProjectSource;
+  resetKey: number;
 
   // 액션
   setUploadedImage: (file: File | null) => void;
@@ -56,6 +57,7 @@ export const useGeneratorStore = create<GeneratorState>((set, get) => ({
   generationError: null,
   activeProjectId: null,
   activeProjectSource: null,
+  resetKey: 0,
 
   setUploadedImage: (file: File | null) => {
     // 이전 URL 해제
@@ -116,6 +118,7 @@ export const useGeneratorStore = create<GeneratorState>((set, get) => ({
       generationError: null,
       activeProjectId: null,
       activeProjectSource: null,
+      resetKey: get().resetKey + 1,
     });
   },
 }));

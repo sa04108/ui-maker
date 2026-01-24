@@ -16,6 +16,7 @@ export interface DesignProject {
   referenceImage: Blob;
   specification: DesignSpecification;
   generatedIcons: GeneratedIcon[];
+  iconSubject?: string;
   llmModel?: LLMModel;
   createdAt: Date;
   updatedAt: Date;

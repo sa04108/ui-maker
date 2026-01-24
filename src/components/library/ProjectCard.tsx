@@ -47,6 +47,13 @@ export const ProjectCard = memo(function ProjectCard({
     onViewInGenerator();
   };
 
+  const displayName = (() => {
+    const splitIndex = project.name.indexOf(' - ');
+    if (splitIndex === -1) return project.name;
+    const trimmed = project.name.slice(splitIndex + 3).trim();
+    return trimmed || project.name;
+  })();
+
   return (
     <div
       onClick={onSelect}
@@ -62,7 +69,7 @@ export const ProjectCard = memo(function ProjectCard({
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-gray-200 truncate">{project.name}</h4>
+        <h4 className="font-medium text-gray-200 truncate">{displayName}</h4>
         <p className="text-xs text-gray-500">
           {project.generatedIcons.length} icons
         </p>

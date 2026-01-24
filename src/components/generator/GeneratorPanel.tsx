@@ -14,7 +14,7 @@ type GeneratorPhase = 'upload' | 'analyze' | 'generate';
 
 export function GeneratorPanel() {
   const { apiKey, provider, model } = useSettingsStore();
-  const { projects, createProject, addIconToProject, updateProject } = useProjectStore();
+  const { projects, createProject, updateProject } = useProjectStore();
   const {
     uploadedImage,
     uploadedImageUrl,
@@ -36,6 +36,7 @@ export function GeneratorPanel() {
     activeProjectSource,
     setActiveProject,
     clearActiveProject,
+    resetKey,
   } = useGeneratorStore();
 
   const [specification, setSpecification] = useState<DesignSpecification | null>(null);
@@ -51,6 +52,10 @@ export function GeneratorPanel() {
       clearActiveProject();
     }
   }, [activeProjectId, activeProject, clearActiveProject]);
+
+  useEffect(() => {
+    setSpecification(null);
+  }, [resetKey]);
 
   // 프로젝트의 referenceImage URL 생성
   useEffect(() => {
@@ -117,6 +122,7 @@ export function GeneratorPanel() {
         referenceImage: uploadedImage,
         specification: spec,
         generatedIcons: [],
+        iconSubject: '',
         llmModel: model,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -173,6 +179,7 @@ export function GeneratorPanel() {
           referenceImage: referenceImage as Blob,
           specification: spec,
           generatedIcons: generatedIcons,
+          iconSubject: subject,
           llmModel: model,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -180,15 +187,16 @@ export function GeneratorPanel() {
         await createProject(newProject);
         setActiveProject(iconProjectId, 'analysis');
       } else if (baseProject) {
-        for (const icon of generatedIcons) {
-          await addIconToProject(baseProject.id, icon);
-        }
-
         // 프로젝트 이름 업데이트: {이미지명} - {Subject}({모델명})
         const imageName = baseProject.name.split(' - ')[0]; // 기존 이미지명 추출
         const modelShortName = getModelShortName(model);
         const newName = `${imageName} - ${subject}(${modelShortName})`;
-        await updateProject({ ...baseProject, name: newName });
+        await updateProject({
+          ...baseProject,
+          name: newName,
+          iconSubject: subject,
+          generatedIcons: [...baseProject.generatedIcons, ...generatedIcons],
+        });
       }
     } catch (error) {
       setGenerationError(error instanceof Error ? error.message : 'Generation failed');
@@ -208,7 +216,6 @@ export function GeneratorPanel() {
     setGenerationError,
     setGeneratedSvgs,
     updateProject,
-    addIconToProject,
     createProject,
     setActiveProject,
   ]);

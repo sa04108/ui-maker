@@ -24,6 +24,8 @@ export function LibraryPanel() {
     setSelectedSvgIndex,
     setGenerationError,
     setAnalysisError,
+    setSubject,
+    reset,
   } = useGeneratorStore();
   const { setActiveTab } = useUiStore();
 
@@ -83,18 +85,26 @@ export function LibraryPanel() {
   const handleViewInGenerator = useCallback(
     (project: typeof currentProject) => {
       if (!project) return;
+      if (activeProjectId !== project.id) {
+        const shouldReset = window.confirm('This will reset your progress. Continue?');
+        if (!shouldReset) return;
+        reset();
+      }
       setGeneratedSvgs([]);
       setSelectedSvgIndex(null);
       setGenerationError(null);
       setAnalysisError(null);
+      setSubject(project.iconSubject ?? '');
       setActiveProject(project.id, 'library');
       setActiveTab('generator');
     },
     [
+      reset,
       setGeneratedSvgs,
       setSelectedSvgIndex,
       setGenerationError,
       setAnalysisError,
+      setSubject,
       setActiveProject,
       setActiveTab,
     ]
