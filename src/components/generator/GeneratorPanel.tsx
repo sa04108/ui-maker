@@ -9,6 +9,7 @@ import type { DesignSpecification, DesignProject, GeneratedIcon } from '@/types'
 import { SvgPreview } from './SvgPreview';
 import { ExportPanel } from './ExportPanel';
 import { SpecificationEditor } from './SpecificationEditor';
+import { SpecificationView } from './SpecificationView';
 
 type GeneratorPhase = 'upload' | 'analyze' | 'generate';
 
@@ -41,6 +42,7 @@ export function GeneratorPanel() {
 
   const [specification, setSpecification] = useState<DesignSpecification | null>(null);
   const [projectImageUrl, setProjectImageUrl] = useState<string | null>(null);
+  const [isEditingSpec, setIsEditingSpec] = useState(false);
 
   const activeProject = useMemo(
     () => projects.find((project) => project.id === activeProjectId) || null,
@@ -51,10 +53,12 @@ export function GeneratorPanel() {
     if (activeProjectId && !activeProject) {
       clearActiveProject();
     }
+    setIsEditingSpec(false);
   }, [activeProjectId, activeProject, clearActiveProject]);
 
   useEffect(() => {
     setSpecification(null);
+    setIsEditingSpec(false);
   }, [resetKey]);
 
   // 프로젝트의 referenceImage URL 생성
@@ -102,6 +106,10 @@ export function GeneratorPanel() {
     },
     [activeProject, updateProject]
   );
+
+  const toggleSpecEditing = useCallback(() => {
+    setIsEditingSpec((prev) => !prev);
+  }, []);
 
   // 표시할 아이콘들: 방금 생성된 것 또는 프로젝트에 저장된 것
   const displaySvgs = useMemo(() => {
@@ -298,12 +306,25 @@ export function GeneratorPanel() {
             <ReferenceImageDisplay />
           </div>
 
-          <div className="bg-gray-800 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-gray-300 mb-3">Design Specification</h3>
-            <SpecificationEditor
-              specification={activeSpec || null}
-              onChange={handleSpecificationChange}
-            />
+          <div className="bg-gray-800 rounded-lg p-4 group">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium text-gray-300">Design Specification</h3>
+              <button
+                type="button"
+                onClick={toggleSpecEditing}
+                className="text-xs text-gray-400 hover:text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                {isEditingSpec ? 'Done' : 'Edit'}
+              </button>
+            </div>
+            {isEditingSpec ? (
+              <SpecificationEditor
+                specification={activeSpec || null}
+                onChange={handleSpecificationChange}
+              />
+            ) : (
+              <SpecificationView specification={activeSpec || null} />
+            )}
           </div>
 
           <div>
@@ -350,12 +371,25 @@ export function GeneratorPanel() {
           <ReferenceImageDisplay />
         </div>
 
-        <div className="bg-gray-800 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-gray-300 mb-3">Design Specification</h3>
-          <SpecificationEditor
-            specification={activeSpec || null}
-            onChange={handleSpecificationChange}
-          />
+        <div className="bg-gray-800 rounded-lg p-4 group">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-gray-300">Design Specification</h3>
+            <button
+              type="button"
+              onClick={toggleSpecEditing}
+              className="text-xs text-gray-400 hover:text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              {isEditingSpec ? 'Done' : 'Edit'}
+            </button>
+          </div>
+          {isEditingSpec ? (
+            <SpecificationEditor
+              specification={activeSpec || null}
+              onChange={handleSpecificationChange}
+            />
+          ) : (
+            <SpecificationView specification={activeSpec || null} />
+          )}
         </div>
       </div>
 
