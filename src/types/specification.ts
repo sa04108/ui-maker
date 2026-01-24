@@ -45,6 +45,12 @@ export interface DesignEffects {
   glowIntensity?: number;
 }
 
+export interface GradientSpec {
+  direction: 'top' | 'bottom' | 'left' | 'right' | 'diagonal' | 'center';
+  startColor: string;
+  endColor: string;
+}
+
 export interface IconStyle {
   weight: 'thin' | 'light' | 'regular' | 'medium' | 'bold' | 'heavy';
   filled: boolean;
@@ -74,6 +80,7 @@ export interface DesignSpecification {
   colors: DesignColors;
   background?: BackgroundSpec;
   effects: DesignEffects;
+  gradient?: GradientSpec;
   iconStyle: IconStyle;
   dimensions?: DimensionSpec;
   designLanguage?: DesignLanguage;

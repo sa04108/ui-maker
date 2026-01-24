@@ -40,6 +40,11 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
     "glowColor": "<hex color>",
     "glowIntensity": <number 0-100>
   },
+  "gradient": {
+    "direction": "top|bottom|left|right|diagonal|center",
+    "startColor": "<hex color>",
+    "endColor": "<hex color>"
+  },
   "iconStyle": {
     "weight": "thin|light|regular|medium|bold|heavy",
     "filled": <boolean>,

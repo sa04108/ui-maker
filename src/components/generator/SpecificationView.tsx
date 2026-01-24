@@ -26,6 +26,10 @@ export function SpecificationView({ specification }: SpecificationViewProps) {
     );
   }
 
+  const gradientDirection = specification.gradient?.direction || specification.effects.gradientDirection;
+  const gradientStart = specification.gradient?.startColor || specification.effects.gradientColors?.[0];
+  const gradientEnd = specification.gradient?.endColor || specification.effects.gradientColors?.[1];
+
   return (
     <div className="space-y-4 text-sm">
       <div>
@@ -57,6 +61,15 @@ export function SpecificationView({ specification }: SpecificationViewProps) {
           <span>Shadow: {specification.effects.hasShadow ? specification.effects.shadowType : 'None'}</span>
           <span>Gradient: {specification.effects.hasGradient ? specification.effects.gradientDirection : 'None'}</span>
           <span>Inner Shadow: {specification.effects.hasInnerShadow ? 'Yes' : 'No'}</span>
+        </div>
+      </div>
+
+      <div>
+        <h4 className="font-medium text-gray-300 mb-2">Gradient</h4>
+        <div className="space-y-1">
+          <div className="text-xs text-gray-400">Direction: {gradientDirection || 'None'}</div>
+          {gradientStart && <ColorSwatch color={gradientStart} label="Start" />}
+          {gradientEnd && <ColorSwatch color={gradientEnd} label="End" />}
         </div>
       </div>
 

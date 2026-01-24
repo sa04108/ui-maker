@@ -44,6 +44,33 @@ export async function analyzeImage(
   }
 
   const now = new Date();
+  const gradientDefaults = {
+    direction: 'top' as const,
+    startColor: analysisResult.colors?.primary || '#3b82f6',
+    endColor: analysisResult.colors?.secondary || '#64748b',
+  };
+  const effectGradientColors = analysisResult.effects?.gradientColors;
+  const gradientFromEffects = effectGradientColors
+    ? {
+        direction: (analysisResult.effects?.gradientDirection as typeof gradientDefaults.direction) || gradientDefaults.direction,
+        startColor: effectGradientColors[0] || gradientDefaults.startColor,
+        endColor: effectGradientColors[1] || gradientDefaults.endColor,
+      }
+    : null;
+
+  const mergedEffects = {
+    hasShadow: false,
+    hasGradient: false,
+    hasInnerShadow: false,
+    ...analysisResult.effects,
+  };
+  const mergedGradient = {
+    ...gradientDefaults,
+    ...(gradientFromEffects || {}),
+    ...analysisResult.gradient,
+  };
+  mergedEffects.gradientDirection = mergedEffects.gradientDirection || mergedGradient.direction;
+  mergedEffects.gradientColors = mergedEffects.gradientColors || [mergedGradient.startColor, mergedGradient.endColor];
 
   // 기본값과 병합하여 완전한 DesignSpecification 생성
   const specification: DesignSpecification = {
@@ -63,12 +90,8 @@ export async function analyzeImage(
       text: '#1f2937',
       ...analysisResult.colors,
     },
-    effects: {
-      hasShadow: false,
-      hasGradient: false,
-      hasInnerShadow: false,
-      ...analysisResult.effects,
-    },
+    effects: mergedEffects,
+    gradient: mergedGradient,
     iconStyle: {
       weight: 'regular',
       filled: false,
