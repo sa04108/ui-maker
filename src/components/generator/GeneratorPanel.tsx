@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, Pencil, Check } from 'lucide-react';
 import { Button, Input } from '@/components/common';
 import { ImageUploader } from '@/components/upload';
 import { useGeneratorStore, useSettingsStore, useProjectStore } from '@/store';
@@ -312,9 +312,10 @@ export function GeneratorPanel() {
               <button
                 type="button"
                 onClick={toggleSpecEditing}
-                className="text-xs text-gray-400 hover:text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="text-gray-400 hover:text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label={isEditingSpec ? 'Done editing specification' : 'Edit specification'}
               >
-                {isEditingSpec ? 'Done' : 'Edit'}
+                {isEditingSpec ? <Check size={14} /> : <Pencil size={14} />}
               </button>
             </div>
             {isEditingSpec ? (
@@ -377,9 +378,10 @@ export function GeneratorPanel() {
             <button
               type="button"
               onClick={toggleSpecEditing}
-              className="text-xs text-gray-400 hover:text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="text-gray-400 hover:text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity"
+              aria-label={isEditingSpec ? 'Done editing specification' : 'Edit specification'}
             >
-              {isEditingSpec ? 'Done' : 'Edit'}
+              {isEditingSpec ? <Check size={14} /> : <Pencil size={14} />}
             </button>
           </div>
           {isEditingSpec ? (
