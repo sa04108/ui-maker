@@ -53,8 +53,11 @@ export function GeneratorPanel() {
     if (activeProjectId && !activeProject) {
       clearActiveProject();
     }
-    setIsEditingSpec(false);
   }, [activeProjectId, activeProject, clearActiveProject]);
+
+  useEffect(() => {
+    setIsEditingSpec(false);
+  }, [activeProjectId]);
 
   useEffect(() => {
     setSpecification(null);
