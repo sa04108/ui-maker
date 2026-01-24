@@ -8,7 +8,7 @@ import { generateSvgs, normalizeSvg } from '@/services/svg';
 import type { DesignSpecification, DesignProject, GeneratedIcon } from '@/types';
 import { SvgPreview } from './SvgPreview';
 import { ExportPanel } from './ExportPanel';
-import { SpecificationView } from './SpecificationView';
+import { SpecificationEditor } from './SpecificationEditor';
 
 type GeneratorPhase = 'upload' | 'analyze' | 'generate';
 
@@ -92,6 +92,16 @@ export function GeneratorPanel() {
 
   const phase = getPhase();
   const activeSpec = activeProject?.specification || specification;
+  const handleSpecificationChange = useCallback(
+    (updatedSpec: DesignSpecification) => {
+      const nextSpec = { ...updatedSpec, updatedAt: new Date() };
+      setSpecification(nextSpec);
+      if (activeProject) {
+        void updateProject({ ...activeProject, specification: nextSpec });
+      }
+    },
+    [activeProject, updateProject]
+  );
 
   // 표시할 아이콘들: 방금 생성된 것 또는 프로젝트에 저장된 것
   const displaySvgs = useMemo(() => {
@@ -290,7 +300,10 @@ export function GeneratorPanel() {
 
           <div className="bg-gray-800 rounded-lg p-4">
             <h3 className="text-sm font-medium text-gray-300 mb-3">Design Specification</h3>
-            <SpecificationView specification={activeSpec || null} />
+            <SpecificationEditor
+              specification={activeSpec || null}
+              onChange={handleSpecificationChange}
+            />
           </div>
 
           <div>
@@ -339,7 +352,10 @@ export function GeneratorPanel() {
 
         <div className="bg-gray-800 rounded-lg p-4">
           <h3 className="text-sm font-medium text-gray-300 mb-3">Design Specification</h3>
-          <SpecificationView specification={activeSpec || null} />
+          <SpecificationEditor
+            specification={activeSpec || null}
+            onChange={handleSpecificationChange}
+          />
         </div>
       </div>
 
