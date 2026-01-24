@@ -43,6 +43,7 @@ export function GeneratorPanel() {
   const [specification, setSpecification] = useState<DesignSpecification | null>(null);
   const [projectImageUrl, setProjectImageUrl] = useState<string | null>(null);
   const [isEditingSpec, setIsEditingSpec] = useState(false);
+  const [draftSpecification, setDraftSpecification] = useState<DesignSpecification | null>(null);
 
   const activeProject = useMemo(
     () => projects.find((project) => project.id === activeProjectId) || null,
@@ -57,11 +58,13 @@ export function GeneratorPanel() {
 
   useEffect(() => {
     setIsEditingSpec(false);
+    setDraftSpecification(null);
   }, [activeProjectId]);
 
   useEffect(() => {
     setSpecification(null);
     setIsEditingSpec(false);
+    setDraftSpecification(null);
   }, [resetKey]);
 
   // 프로젝트의 referenceImage URL 생성
@@ -99,7 +102,7 @@ export function GeneratorPanel() {
 
   const phase = getPhase();
   const activeSpec = activeProject?.specification || specification;
-  const handleSpecificationChange = useCallback(
+  const commitSpecificationChange = useCallback(
     (updatedSpec: DesignSpecification) => {
       const nextSpec = { ...updatedSpec, updatedAt: new Date() };
       setSpecification(nextSpec);
@@ -111,8 +114,18 @@ export function GeneratorPanel() {
   );
 
   const toggleSpecEditing = useCallback(() => {
-    setIsEditingSpec((prev) => !prev);
-  }, []);
+    setIsEditingSpec((prev) => {
+      const next = !prev;
+      if (!prev && activeSpec) {
+        setDraftSpecification(activeSpec);
+      }
+      if (prev && draftSpecification) {
+        commitSpecificationChange(draftSpecification);
+        setDraftSpecification(null);
+      }
+      return next;
+    });
+  }, [activeSpec, draftSpecification, commitSpecificationChange]);
 
   // 표시할 아이콘들: 방금 생성된 것 또는 프로젝트에 저장된 것
   const displaySvgs = useMemo(() => {
@@ -323,8 +336,8 @@ export function GeneratorPanel() {
             </div>
             {isEditingSpec ? (
               <SpecificationEditor
-                specification={activeSpec || null}
-                onChange={handleSpecificationChange}
+                specification={draftSpecification || activeSpec || null}
+                onChange={setDraftSpecification}
               />
             ) : (
               <SpecificationView specification={activeSpec || null} />
@@ -389,8 +402,8 @@ export function GeneratorPanel() {
           </div>
           {isEditingSpec ? (
             <SpecificationEditor
-              specification={activeSpec || null}
-              onChange={handleSpecificationChange}
+              specification={draftSpecification || activeSpec || null}
+              onChange={setDraftSpecification}
             />
           ) : (
             <SpecificationView specification={activeSpec || null} />
