@@ -47,12 +47,7 @@ export const ProjectCard = memo(function ProjectCard({
     onViewInGenerator();
   };
 
-  const displayName = (() => {
-    const splitIndex = project.name.indexOf(' - ');
-    if (splitIndex === -1) return project.name;
-    const trimmed = project.name.slice(splitIndex + 3).trim();
-    return trimmed || project.name;
-  })();
+  const displayName = project.name;
 
   return (
     <div

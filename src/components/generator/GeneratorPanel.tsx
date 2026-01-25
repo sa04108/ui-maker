@@ -6,6 +6,8 @@ import { useGeneratorStore, useSettingsStore, useProjectStore } from '@/store';
 import { analyzeImage } from '@/services/llm';
 import { generateSvgs, normalizeSvg } from '@/services/svg';
 import type { DesignSpecification, DesignProject, GeneratedIcon } from '@/types';
+import { getModelDisplayName } from '@/types/settings';
+import { generateId, removeExtension } from '@/utils';
 import { SvgPreview } from './SvgPreview';
 import { ExportPanel } from './ExportPanel';
 import { SpecificationEditor } from './SpecificationEditor';
@@ -34,7 +36,6 @@ export function GeneratorPanel() {
     generationError,
     setGenerationError,
     activeProjectId,
-    activeProjectSource,
     setActiveProject,
     clearActiveProject,
     resetKey,
@@ -128,13 +129,15 @@ export function GeneratorPanel() {
   }, [activeSpec, draftSpecification, commitSpecificationChange]);
 
   // 표시할 아이콘들: 방금 생성된 것 또는 프로젝트에 저장된 것
+  // 생성 중에는 빈 배열 반환 (이전 저장된 아이콘이 깜빡이는 것 방지)
   const displaySvgs = useMemo(() => {
+    if (isGenerating) return [];
     if (generatedSvgs.length > 0) return generatedSvgs;
     if (activeProject?.generatedIcons) {
       return activeProject.generatedIcons.map(icon => icon.svgCode);
     }
     return [];
-  }, [generatedSvgs, activeProject?.generatedIcons]);
+  }, [isGenerating, generatedSvgs, activeProject?.generatedIcons]);
 
   const handleAnalyze = useCallback(async () => {
     if (!uploadedImage || !apiKey) return;
@@ -146,13 +149,10 @@ export function GeneratorPanel() {
       const spec = await analyzeImage(uploadedImage, apiKey, provider, model);
       setSpecification(spec);
 
-      // 프로젝트 이름: {이미지명}
-      const imageName = uploadedImage.name.replace(/\.[^/.]+$/, '');
-
       // 새 프로젝트 생성
       const project: DesignProject = {
-        id: `proj_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-        name: imageName,
+        id: generateId('proj'),
+        name: removeExtension(uploadedImage.name),
         referenceImage: uploadedImage,
         specification: spec,
         generatedIcons: [],
@@ -172,7 +172,6 @@ export function GeneratorPanel() {
 
   const handleGenerate = useCallback(async () => {
     const spec = activeProject?.specification || specification;
-    const isFromLibrary = activeProjectSource === 'library';
     const baseProject = activeProject;
     const projectId = baseProject?.id || null;
     const referenceImage = baseProject?.referenceImage || uploadedImage;
@@ -180,6 +179,7 @@ export function GeneratorPanel() {
 
     setIsGenerating(true);
     setGenerationError(null);
+    // Clear generated SVGs but don't show old saved icons during generation
     setGeneratedSvgs([]);
 
     try {
@@ -187,14 +187,15 @@ export function GeneratorPanel() {
       const normalizedSvgs = svgs.map(normalizeSvg);
       setGeneratedSvgs(normalizedSvgs);
 
-      const iconProjectId =
-        isFromLibrary || !projectId
-          ? `proj_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-          : projectId;
+      // Determine if we should create a new project or update existing one
+      // Create new project if: no project exists OR subject changed from original
+      const subjectChanged = baseProject && baseProject.iconSubject !== subject;
+      const shouldCreateNew = !projectId || subjectChanged;
+      const iconProjectId = shouldCreateNew ? generateId('proj') : projectId;
 
       const generatedIcons: GeneratedIcon[] = normalizedSvgs
-        .map((svgCode, index) => ({
-          id: `icon_${Date.now()}_${index}_${Math.random().toString(36).substring(2, 9)}`,
+        .map((svgCode) => ({
+          id: generateId('icon'),
           projectId: iconProjectId,
           subject,
           svgCode,
@@ -203,10 +204,9 @@ export function GeneratorPanel() {
         }))
         .filter((icon) => icon.svgCode);
 
-      if (isFromLibrary || !projectId) {
-        const baseName = baseProject?.name.split(' - ')[0] || uploadedImage?.name.replace(/\.[^/.]+$/, '');
-        const modelShortName = getModelShortName(model);
-        const projectName = baseName ? `${baseName} - ${subject}(${modelShortName})` : `Untitled - ${subject}(${modelShortName})`;
+      const projectName = `${subject}(${getModelDisplayName(model)})`;
+
+      if (shouldCreateNew) {
         const newProject: DesignProject = {
           id: iconProjectId,
           name: projectName,
@@ -221,13 +221,9 @@ export function GeneratorPanel() {
         await createProject(newProject);
         setActiveProject(iconProjectId, 'analysis');
       } else if (baseProject) {
-        // 프로젝트 이름 업데이트: {이미지명} - {Subject}({모델명})
-        const imageName = baseProject.name.split(' - ')[0]; // 기존 이미지명 추출
-        const modelShortName = getModelShortName(model);
-        const newName = `${imageName} - ${subject}(${modelShortName})`;
         await updateProject({
           ...baseProject,
-          name: newName,
+          name: projectName,
           iconSubject: subject,
           generatedIcons: [...baseProject.generatedIcons, ...generatedIcons],
         });
@@ -240,7 +236,6 @@ export function GeneratorPanel() {
   }, [
     specification,
     activeProject,
-    activeProjectSource,
     subject,
     apiKey,
     provider,
@@ -473,20 +468,4 @@ export function GeneratorPanel() {
       </div>
     </div>
   );
-}
-
-// 모델명을 짧은 이름으로 변환
-function getModelShortName(model: string): string {
-  const modelMap: Record<string, string> = {
-    'gpt-4o': 'GPT-4o',
-    'gpt-4o-mini': 'GPT-4o-mini',
-    'o4-mini': 'o4-mini',
-    'gpt-4.1': 'GPT-4.1',
-    'claude-sonnet-4-20250514': 'Sonnet 4',
-    'claude-opus-4-20250514': 'Opus 4',
-    'gemini-2.5-flash': 'Gemini 2.5 Flash',
-    'gemini-2.5-pro': 'Gemini 2.5 Pro',
-    'gemini-2.0-flash': 'Gemini 2.0 Flash',
-  };
-  return modelMap[model] || model;
 }

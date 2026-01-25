@@ -46,6 +46,11 @@ export function getDefaultModelForProvider(provider: LLMProvider): LLMModel {
   return 'gemini-2.5-flash';
 }
 
+export function getModelDisplayName(modelId: string): string {
+  const model = ALL_MODELS.find(m => m.id === modelId);
+  return model?.name || modelId;
+}
+
 export interface Settings {
   id: string;
   apiKey: string;

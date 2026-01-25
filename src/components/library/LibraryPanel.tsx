@@ -85,7 +85,8 @@ export function LibraryPanel() {
   const handleViewInGenerator = useCallback(
     (project: typeof currentProject) => {
       if (!project) return;
-      if (activeProjectId !== project.id) {
+      // Only show confirm if there's an active project that's different from the one being opened
+      if (activeProjectId && activeProjectId !== project.id) {
         const shouldReset = window.confirm('This will reset your progress. Continue?');
         if (!shouldReset) return;
         reset();
@@ -99,6 +100,7 @@ export function LibraryPanel() {
       setActiveTab('generator');
     },
     [
+      activeProjectId,
       reset,
       setGeneratedSvgs,
       setSelectedSvgIndex,

@@ -2,10 +2,7 @@ import type { DesignSpecification, LLMProvider, LLMModel, OpenAIModel, Anthropic
 import { analyzeImageWithOpenAI } from './providers/openai';
 import { analyzeImageWithAnthropic } from './providers/anthropic';
 import { analyzeImageWithGoogle } from './providers/google';
-
-function generateId(): string {
-  return `spec_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-}
+import { generateId, removeExtension } from '@/utils';
 
 async function fileToBase64(file: File): Promise<{ base64: string; mimeType: string }> {
   return new Promise((resolve, reject) => {
@@ -74,8 +71,8 @@ export async function analyzeImage(
 
   // 기본값과 병합하여 완전한 DesignSpecification 생성
   const specification: DesignSpecification = {
-    id: generateId(),
-    name: file.name.replace(/\.[^/.]+$/, ''), // 확장자 제거
+    id: generateId('spec'),
+    name: removeExtension(file.name),
     style: {
       shape: 'rounded',
       borderRadius: 8,
