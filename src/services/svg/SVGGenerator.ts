@@ -17,18 +17,44 @@ export async function generateSvgs(
   subject: string,
   apiKey: string,
   provider: LLMProvider,
-  model: LLMModel
+  model: LLMModel,
+  lastSubject: string = '',
+  lastGeneratedSvgs: string[] = []
 ): Promise<string[]> {
   // seed = hash(specificationId + subject) for consistency
   const seed = hashString(`${specification.id}_${subject}`);
 
   if (provider === 'openai') {
-    return generateSvgsWithOpenAI(apiKey, specification, subject, seed, model as OpenAIModel);
+    return generateSvgsWithOpenAI(
+      apiKey,
+      specification,
+      subject,
+      seed,
+      model as OpenAIModel,
+      lastSubject,
+      lastGeneratedSvgs
+    );
   }
   if (provider === 'anthropic') {
-    return generateSvgsWithAnthropic(apiKey, specification, subject, seed, model as AnthropicModel);
+    return generateSvgsWithAnthropic(
+      apiKey,
+      specification,
+      subject,
+      seed,
+      model as AnthropicModel,
+      lastSubject,
+      lastGeneratedSvgs
+    );
   }
-  return generateSvgsWithGoogle(apiKey, specification, subject, seed, model as GoogleModel);
+  return generateSvgsWithGoogle(
+    apiKey,
+    specification,
+    subject,
+    seed,
+    model as GoogleModel,
+    lastSubject,
+    lastGeneratedSvgs
+  );
 }
 
 // SVG 유효성 검사

@@ -71,9 +71,17 @@ export async function generateSvgsWithAnthropic(
   specification: DesignSpecification,
   subject: string,
   _seed: number, // Anthropic은 seed 대신 temperature=0으로 일관성 보장
-  model: AnthropicModel = 'claude-sonnet-4-20250514'
+  model: AnthropicModel = 'claude-sonnet-4-20250514',
+  lastSubject: string = '',
+  lastGeneratedSvgs: string[] = []
 ): Promise<string[]> {
-  const prompt = getSvgGenerationPrompt(JSON.stringify(specification, null, 2), subject, 5);
+  const prompt = getSvgGenerationPrompt(
+    JSON.stringify(specification, null, 2),
+    subject,
+    5,
+    lastSubject,
+    lastGeneratedSvgs
+  );
 
   const response = await fetch(ANTHROPIC_API_URL, {
     method: 'POST',

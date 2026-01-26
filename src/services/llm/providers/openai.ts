@@ -65,9 +65,17 @@ export async function generateSvgsWithOpenAI(
   specification: DesignSpecification,
   subject: string,
   seed: number,
-  model: OpenAIModel = 'gpt-4o'
+  model: OpenAIModel = 'gpt-4o',
+  lastSubject: string = '',
+  lastGeneratedSvgs: string[] = []
 ): Promise<string[]> {
-  const prompt = getSvgGenerationPrompt(JSON.stringify(specification, null, 2), subject, 5);
+  const prompt = getSvgGenerationPrompt(
+    JSON.stringify(specification, null, 2),
+    subject,
+    5,
+    lastSubject,
+    lastGeneratedSvgs
+  );
 
   const response = await fetch(OPENAI_API_URL, {
     method: 'POST',

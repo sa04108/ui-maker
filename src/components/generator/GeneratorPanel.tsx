@@ -35,6 +35,9 @@ export function GeneratorPanel() {
     setSelectedSvgIndex,
     generationError,
     setGenerationError,
+    lastSubject,
+    lastGeneratedSvgs,
+    setLastGeneration,
     activeProjectId,
     setActiveProject,
     clearActiveProject,
@@ -183,9 +186,18 @@ export function GeneratorPanel() {
     setGeneratedSvgs([]);
 
     try {
-      const svgs = await generateSvgs(spec, subject, apiKey, provider, model);
+      const svgs = await generateSvgs(
+        spec,
+        subject,
+        apiKey,
+        provider,
+        model,
+        lastSubject,
+        lastGeneratedSvgs
+      );
       const normalizedSvgs = svgs.map(normalizeSvg);
       setGeneratedSvgs(normalizedSvgs);
+      setLastGeneration(subject, normalizedSvgs);
 
       // Determine if we should create a new project or update existing one
       // Create new project if: no project exists OR subject changed from original
@@ -244,6 +256,9 @@ export function GeneratorPanel() {
     setIsGenerating,
     setGenerationError,
     setGeneratedSvgs,
+    lastSubject,
+    lastGeneratedSvgs,
+    setLastGeneration,
     updateProject,
     createProject,
     setActiveProject,

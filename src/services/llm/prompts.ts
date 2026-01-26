@@ -78,14 +78,24 @@ Be extremely precise and consistent. Focus on capturing every visual detail.`;
 export function getSvgGenerationPrompt(
   specification: string,
   subject: string,
-  count: number = 5
+  count: number = 5,
+  lastSubject: string = '',
+  lastGeneratedSvgs: string[] = []
 ): string {
+  const shouldAvoidSimilarity =
+    lastSubject.trim().length > 0 &&
+    lastSubject.trim().toLowerCase() === subject.trim().toLowerCase() &&
+    lastGeneratedSvgs.length > 0;
+  const priorSvgBlock = shouldAvoidSimilarity
+    ? `\nPrevious SVGs (avoid similarity):\n${lastGeneratedSvgs.join('\n')}\n\nCore requirement: "Candidate SVGs must have no similarity to these SVGs. 반드시."\n`
+    : '';
+
   return `You are an expert SVG icon designer. Generate ${count} professional-quality SVG icon variations for "${subject}" based on the design specification below.
 
 Design Specification:
 ${specification}
 
-CRITICAL Requirements:
+${priorSvgBlock}CRITICAL Requirements:
 1. Each SVG MUST be valid, self-contained, and production-ready
 2. Use viewBox="0 0 24 24" - no width/height attributes
 3. STRICTLY follow the specification's visual style:
@@ -111,6 +121,15 @@ SVG Best Practices:
 - Ensure all paths are properly closed
 - Use currentColor for adaptable coloring when appropriate
 - Apply effects (shadows, glows) using SVG filters if specified
+
+Candidate generation + evaluation (internal only, DO NOT output this process):
+- First create 3 x ${count} candidate SVGs.
+- Score each candidate with this checklist:
+  1) Parses as SVG XML (valid <svg> root, valid markup).
+  2) Subject accuracy: infer the subject from the candidate SVG and score its match to the user-provided subject on a 20-point scale.
+  3) Spec fidelity: convert the candidate SVG back into a spec and score its match to the provided spec on a 10-point scale.
+- Select the highest-scoring ${count} candidates.
+- Output ONLY the final ${count} SVGs. Do not include candidates, scores, or explanations.
 
 Return ONLY a JSON array of ${count} complete SVG strings:
 ["<svg xmlns=\\"http://www.w3.org/2000/svg\\" viewBox=\\"0 0 24 24\\">...</svg>", ...]`;

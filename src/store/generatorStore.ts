@@ -23,6 +23,8 @@ interface GeneratorState {
   generatedSvgs: string[];
   selectedSvgIndex: number | null;
   generationError: string | null;
+  lastSubject: string;
+  lastGeneratedSvgs: string[];
 
   // Generator에 표시 중인 프로젝트
   activeProjectId: string | null;
@@ -39,6 +41,7 @@ interface GeneratorState {
   setGeneratedSvgs: (svgs: string[]) => void;
   setSelectedSvgIndex: (index: number | null) => void;
   setGenerationError: (error: string | null) => void;
+  setLastGeneration: (subject: string, svgs: string[]) => void;
   setActiveProject: (projectId: string | null, source: ActiveProjectSource) => void;
   clearActiveProject: () => void;
   reset: () => void;
@@ -55,6 +58,8 @@ export const useGeneratorStore = create<GeneratorState>((set, get) => ({
   generatedSvgs: [],
   selectedSvgIndex: null,
   generationError: null,
+  lastSubject: '',
+  lastGeneratedSvgs: [],
   activeProjectId: null,
   activeProjectSource: null,
   resetKey: 0,
@@ -89,6 +94,8 @@ export const useGeneratorStore = create<GeneratorState>((set, get) => ({
   setGeneratedSvgs: (svgs: string[]) => set({ generatedSvgs: svgs, selectedSvgIndex: null }),
   setSelectedSvgIndex: (index: number | null) => set({ selectedSvgIndex: index }),
   setGenerationError: (error: string | null) => set({ generationError: error }),
+  setLastGeneration: (subject: string, svgs: string[]) =>
+    set({ lastSubject: subject, lastGeneratedSvgs: svgs }),
   setActiveProject: (projectId: string | null, source: ActiveProjectSource) =>
     set({
       activeProjectId: projectId,
@@ -116,6 +123,8 @@ export const useGeneratorStore = create<GeneratorState>((set, get) => ({
       generatedSvgs: [],
       selectedSvgIndex: null,
       generationError: null,
+      lastSubject: '',
+      lastGeneratedSvgs: [],
       activeProjectId: null,
       activeProjectSource: null,
       resetKey: get().resetKey + 1,

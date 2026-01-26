@@ -81,9 +81,17 @@ export async function generateSvgsWithGoogle(
   specification: DesignSpecification,
   subject: string,
   _seed: number,
-  model: GoogleModel = 'gemini-2.5-flash'
+  model: GoogleModel = 'gemini-2.5-flash',
+  lastSubject: string = '',
+  lastGeneratedSvgs: string[] = []
 ): Promise<string[]> {
-  const prompt = getSvgGenerationPrompt(JSON.stringify(specification, null, 2), subject, 5);
+  const prompt = getSvgGenerationPrompt(
+    JSON.stringify(specification, null, 2),
+    subject,
+    5,
+    lastSubject,
+    lastGeneratedSvgs
+  );
 
   const response = await fetch(buildGoogleUrl(model, apiKey), {
     method: 'POST',
