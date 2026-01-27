@@ -65,6 +65,9 @@ export async function analyzeImageWithGoogle(
     throw new Error('No response from Google Gemini');
   }
 
+  // Debug: log raw model output in browser console for inspection
+  console.log('[LLM][Google][generateSvgs] raw message:', content);
+
   try {
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {

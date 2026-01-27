@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, Input, Select, Button } from '@/components/common';
 import { useSettingsStore } from '@/store';
 import type { LLMProvider, LLMModel } from '@/types';
 import { getModelsForProvider, getDefaultModelForProvider } from '@/types/settings';
+import { checkOllamaConnection } from '@/services/llm/providers/ollama';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ const providerOptions = [
   { value: 'openai', label: 'OpenAI' },
   { value: 'anthropic', label: 'Anthropic' },
   { value: 'google', label: 'Google Gemini' },
+  { value: 'ollama', label: 'Ollama (Local)' },
 ];
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
@@ -20,17 +22,23 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [localApiKey, setLocalApiKey] = useState(apiKey);
   const [localProvider, setLocalProvider] = useState<LLMProvider>(provider);
   const [localModel, setLocalModel] = useState<LLMModel>(model);
+  const [ollamaStatus, setOllamaStatus] = useState<{
+    state: 'idle' | 'checking' | 'ok' | 'error';
+    message: string;
+    models: string[];
+  }>({ state: 'idle', message: '', models: [] });
 
   useEffect(() => {
     setLocalApiKey(apiKey);
     setLocalProvider(provider);
     setLocalModel(model);
+    setOllamaStatus({ state: 'idle', message: '', models: [] });
   }, [apiKey, provider, model, isOpen]);
 
   const handleProviderChange = (newProvider: LLMProvider) => {
     setLocalProvider(newProvider);
     setLocalModel(getDefaultModelForProvider(newProvider));
-    setLocalApiKey(apiKeys[newProvider] || '');
+    setLocalApiKey(newProvider === 'ollama' ? '' : apiKeys[newProvider] || '');
   };
 
   const handleSave = async () => {
@@ -48,6 +56,26 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   }));
 
   const selectedModelInfo = getModelsForProvider(localProvider).find((m) => m.id === localModel);
+  const ollamaModelAvailable = useMemo(() => {
+    if (localProvider !== 'ollama' || ollamaStatus.models.length === 0) return null;
+    const modelId = String(localModel);
+    const exactMatch = ollamaStatus.models.includes(modelId);
+    if (exactMatch) return true;
+    if (modelId.includes(':')) return false;
+    return ollamaStatus.models.some((name) => name === modelId || name.startsWith(`${modelId}:`));
+  }, [localProvider, localModel, ollamaStatus.models]);
+
+  const handleCheckOllama = async () => {
+    setOllamaStatus({ state: 'checking', message: 'Checking local Ollama...', models: [] });
+    try {
+      const result = await checkOllamaConnection();
+      const modelHint = result.models.length > 0 ? `${result.models.length} model(s) found.` : 'No local models found.';
+      setOllamaStatus({ state: 'ok', message: `Connected. ${modelHint}`, models: result.models });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to reach Ollama.';
+      setOllamaStatus({ state: 'error', message, models: [] });
+    }
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Settings">
@@ -69,22 +97,50 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             {selectedModelInfo.description}
           </p>
         )}
-        <Input
-          label="API Key"
-          type="password"
-          value={localApiKey}
-          onChange={(e) => setLocalApiKey(e.target.value)}
-          placeholder={
-            localProvider === 'openai'
-              ? 'sk-...'
-              : localProvider === 'anthropic'
-                ? 'sk-ant-...'
-                : 'AIza...'
-          }
-        />
-        <p className="text-xs text-gray-500">
-          Your API key is stored locally in your browser and never sent to our servers.
-        </p>
+        {localProvider === 'ollama' ? (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 space-y-2">
+            <div className="font-medium text-slate-900">Ollama Connection</div>
+            <p className="text-xs text-slate-600">
+              Ollama runs locally, so no API key is required. Use the check below to confirm access to your local runtime.
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" onClick={handleCheckOllama} disabled={ollamaStatus.state === 'checking'}>
+                {ollamaStatus.state === 'checking' ? 'Checking...' : 'Check Ollama'}
+              </Button>
+              {ollamaStatus.state !== 'idle' && (
+                <span className={`text-xs ${ollamaStatus.state === 'error' ? 'text-red-600' : 'text-emerald-700'}`}>
+                  {ollamaStatus.message}
+                </span>
+              )}
+            </div>
+            {ollamaStatus.state === 'ok' && ollamaModelAvailable !== null && (
+              <p className={`text-xs ${ollamaModelAvailable ? 'text-emerald-700' : 'text-amber-700'}`}>
+                {ollamaModelAvailable
+                  ? 'Selected model is installed locally.'
+                  : 'Selected model is not installed. Pull it in Ollama to use it.'}
+              </p>
+            )}
+          </div>
+        ) : (
+          <>
+            <Input
+              label="API Key"
+              type="password"
+              value={localApiKey}
+              onChange={(e) => setLocalApiKey(e.target.value)}
+              placeholder={
+                localProvider === 'openai'
+                  ? 'sk-...'
+                  : localProvider === 'anthropic'
+                    ? 'sk-ant-...'
+                    : 'AIza...'
+              }
+            />
+            <p className="text-xs text-gray-500">
+              Your API key is stored locally in your browser and never sent to our servers.
+            </p>
+          </>
+        )}
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="ghost" onClick={onClose}>
             Cancel

@@ -17,6 +17,7 @@ type GeneratorPhase = 'upload' | 'analyze' | 'generate';
 
 export function GeneratorPanel() {
   const { apiKey, provider, model } = useSettingsStore();
+  const requiresApiKey = provider !== 'ollama';
   const { projects, createProject, updateProject } = useProjectStore();
   const {
     uploadedImage,
@@ -143,7 +144,7 @@ export function GeneratorPanel() {
   }, [isGenerating, generatedSvgs, activeProject?.generatedIcons]);
 
   const handleAnalyze = useCallback(async () => {
-    if (!uploadedImage || !apiKey) return;
+    if (!uploadedImage || (requiresApiKey && !apiKey)) return;
 
     setIsAnalyzing(true);
     setAnalysisError(null);
@@ -171,14 +172,14 @@ export function GeneratorPanel() {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [uploadedImage, apiKey, provider, model, setIsAnalyzing, setAnalysisError, createProject, setActiveProject]);
+  }, [uploadedImage, apiKey, provider, model, requiresApiKey, setIsAnalyzing, setAnalysisError, createProject, setActiveProject]);
 
   const handleGenerate = useCallback(async () => {
     const spec = activeProject?.specification || specification;
     const baseProject = activeProject;
     const projectId = baseProject?.id || null;
     const referenceImage = baseProject?.referenceImage || uploadedImage;
-    if (!spec || !subject || !apiKey || (!projectId && !referenceImage)) return;
+    if (!spec || !subject || (requiresApiKey && !apiKey) || (!projectId && !referenceImage)) return;
 
     setIsGenerating(true);
     setGenerationError(null);
@@ -253,6 +254,7 @@ export function GeneratorPanel() {
     provider,
     model,
     uploadedImage,
+    requiresApiKey,
     setIsGenerating,
     setGenerationError,
     setGeneratedSvgs,
@@ -295,7 +297,7 @@ export function GeneratorPanel() {
           {uploadedImage && (
             <Button
               onClick={handleAnalyze}
-              disabled={isAnalyzing || !apiKey}
+              disabled={isAnalyzing || (requiresApiKey && !apiKey)}
               className="w-full"
             >
               {isAnalyzing ? (
@@ -364,7 +366,7 @@ export function GeneratorPanel() {
               />
               <Button
                 onClick={handleGenerate}
-                disabled={isGenerating || !activeSpec || !subject || !apiKey}
+                disabled={isGenerating || !activeSpec || !subject || (requiresApiKey && !apiKey)}
               >
                 {isGenerating ? (
                   <Loader2 size={16} className="animate-spin" />
@@ -433,7 +435,7 @@ export function GeneratorPanel() {
             />
             <Button
               onClick={handleGenerate}
-              disabled={isGenerating || !activeSpec || !subject || !apiKey}
+              disabled={isGenerating || !activeSpec || !subject || (requiresApiKey && !apiKey)}
             >
               {isGenerating ? (
                 <Loader2 size={16} className="animate-spin" />

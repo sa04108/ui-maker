@@ -48,6 +48,9 @@ export async function analyzeImageWithOpenAI(
     throw new Error('No response from OpenAI');
   }
 
+  // Debug: log raw model output in browser console for inspection
+  console.log('[LLM][OpenAI][generateSvgs] raw message:', content);
+
   // JSON 파싱 시도
   try {
     const jsonMatch = content.match(/\{[\s\S]*\}/);

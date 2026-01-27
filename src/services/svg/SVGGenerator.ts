@@ -1,5 +1,5 @@
-import type { DesignSpecification, LLMProvider, LLMModel, OpenAIModel, AnthropicModel, GoogleModel } from '@/types';
-import { generateSvgsWithOpenAI, generateSvgsWithAnthropic, generateSvgsWithGoogle } from '../llm/providers';
+import type { DesignSpecification, LLMProvider, LLMModel, OpenAIModel, AnthropicModel, GoogleModel, OllamaModel } from '@/types';
+import { generateSvgsWithOpenAI, generateSvgsWithAnthropic, generateSvgsWithGoogle, generateSvgsWithOllama } from '../llm/providers';
 
 // 문자열 해시 함수 (seed 생성용)
 function hashString(str: string): number {
@@ -46,12 +46,22 @@ export async function generateSvgs(
       lastGeneratedSvgs
     );
   }
-  return generateSvgsWithGoogle(
-    apiKey,
+  if (provider === 'google') {
+    return generateSvgsWithGoogle(
+      apiKey,
+      specification,
+      subject,
+      seed,
+      model as GoogleModel,
+      lastSubject,
+      lastGeneratedSvgs
+    );
+  }
+  return generateSvgsWithOllama(
     specification,
     subject,
     seed,
-    model as GoogleModel,
+    model as OllamaModel,
     lastSubject,
     lastGeneratedSvgs
   );

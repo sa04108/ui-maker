@@ -1,7 +1,8 @@
-import type { DesignSpecification, LLMProvider, LLMModel, OpenAIModel, AnthropicModel, GoogleModel } from '@/types';
+import type { DesignSpecification, LLMProvider, LLMModel, OpenAIModel, AnthropicModel, GoogleModel, OllamaModel } from '@/types';
 import { analyzeImageWithOpenAI } from './providers/openai';
 import { analyzeImageWithAnthropic } from './providers/anthropic';
 import { analyzeImageWithGoogle } from './providers/google';
+import { analyzeImageWithOllama } from './providers/ollama';
 import { generateId, removeExtension } from '@/utils';
 
 async function fileToBase64(file: File): Promise<{ base64: string; mimeType: string }> {
@@ -36,8 +37,10 @@ export async function analyzeImage(
     analysisResult = await analyzeImageWithOpenAI(apiKey, base64, mimeType, model as OpenAIModel);
   } else if (provider === 'anthropic') {
     analysisResult = await analyzeImageWithAnthropic(apiKey, base64, mimeType, model as AnthropicModel);
-  } else {
+  } else if (provider === 'google') {
     analysisResult = await analyzeImageWithGoogle(apiKey, base64, mimeType, model as GoogleModel);
+  } else {
+    analysisResult = await analyzeImageWithOllama(base64, model as OllamaModel);
   }
 
   const now = new Date();

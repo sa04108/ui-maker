@@ -54,6 +54,9 @@ export async function analyzeImageWithAnthropic(
     throw new Error('No response from Anthropic');
   }
 
+  // Debug: log raw model output in browser console for inspection
+  console.log('[LLM][Anthropic][generateSvgs] raw message:', content);
+
   // JSON 파싱 시도
   try {
     const jsonMatch = content.match(/\{[\s\S]*\}/);

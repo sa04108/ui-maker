@@ -23,6 +23,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     openai: '',
     anthropic: '',
     google: '',
+    ollama: '',
   },
   provider: 'openai',
   model: getDefaultModelForProvider('openai'),
@@ -75,11 +76,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
             openai: legacyApiKey,
             anthropic: '',
             google: '',
+            ollama: '',
           };
       const normalizedApiKeys = {
         openai: '',
         anthropic: '',
         google: '',
+        ollama: '',
         ...storedApiKeys,
       };
       const activeApiKey = normalizedApiKeys[settings.provider] || '';

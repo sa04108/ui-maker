@@ -8,7 +8,7 @@ import { ALL_MODELS } from '@/types/settings';
 export function Header() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHoveringProject, setIsHoveringProject] = useState(false);
-  const { apiKey, model } = useSettingsStore();
+  const { apiKey, model, provider } = useSettingsStore();
   const { projects } = useProjectStore();
   const { activeProjectId, clearActiveProject } = useGeneratorStore();
 
@@ -51,7 +51,7 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-3">
-          {!apiKey && (
+          {!apiKey && provider !== 'ollama' && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-900/30 border border-yellow-700 rounded text-sm text-yellow-400">
               <AlertCircle size={14} />
               <span>API key required</span>

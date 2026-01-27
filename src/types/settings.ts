@@ -1,10 +1,11 @@
-export type LLMProvider = 'openai' | 'anthropic' | 'google';
+export type LLMProvider = 'openai' | 'anthropic' | 'google' | 'ollama';
 
 export type OpenAIModel = 'gpt-5.2-codex' | 'gpt-4o' | 'gpt-4o-mini' | 'o4-mini' | 'gpt-4.1' | 'gpt-3.5-turbo';
 export type AnthropicModel = 'claude-opus-4-5-20251101' | 'claude-sonnet-4-5-20250929' | 'claude-haiku-4-5-20251001';
 export type GoogleModel = 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'gemini-2.0-flash';
+export type OllamaModel = 'llama3.2-vision' | 'qwen2.5vl' | 'gemma3:4b';
 
-export type LLMModel = OpenAIModel | AnthropicModel | GoogleModel;
+export type LLMModel = OpenAIModel | AnthropicModel | GoogleModel | OllamaModel;
 
 export interface ModelOption {
   id: LLMModel;
@@ -35,18 +36,26 @@ export const GOOGLE_MODELS: ModelOption[] = [
   { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'google', description: 'Reliable fast model for everyday tasks', tier: 'standard' },
 ];
 
-export const ALL_MODELS: ModelOption[] = [...OPENAI_MODELS, ...ANTHROPIC_MODELS, ...GOOGLE_MODELS];
+export const OLLAMA_MODELS: ModelOption[] = [
+  { id: 'llama3.2-vision', name: 'Llama 3.2 Vision', provider: 'ollama', description: 'Local vision model with strong image understanding', tier: 'standard' },
+  { id: 'qwen2.5vl', name: 'Qwen 2.5 VL', provider: 'ollama', description: 'Vision-language model for layout and icon analysis', tier: 'premium' },
+  { id: 'gemma3:4b', name: 'Gemma 3 4B Vision', provider: 'ollama', description: 'Lightweight multimodal model for local workflows', tier: 'standard' },
+];
+
+export const ALL_MODELS: ModelOption[] = [...OPENAI_MODELS, ...ANTHROPIC_MODELS, ...GOOGLE_MODELS, ...OLLAMA_MODELS];
 
 export function getModelsForProvider(provider: LLMProvider): ModelOption[] {
   if (provider === 'openai') return OPENAI_MODELS;
   if (provider === 'anthropic') return ANTHROPIC_MODELS;
-  return GOOGLE_MODELS;
+  if (provider === 'google') return GOOGLE_MODELS;
+  return OLLAMA_MODELS;
 }
 
 export function getDefaultModelForProvider(provider: LLMProvider): LLMModel {
   if (provider === 'openai') return 'gpt-5.2-codex';
   if (provider === 'anthropic') return 'claude-opus-4-5-20251101';
-  return 'gemini-2.5-pro';
+  if (provider === 'google') return 'gemini-2.5-pro';
+  return 'llama3.2-vision';
 }
 
 export function getModelDisplayName(modelId: string): string {
