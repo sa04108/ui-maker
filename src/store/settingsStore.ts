@@ -7,6 +7,7 @@ const SETTINGS_ID = 'user-settings';
 
 interface SettingsState {
   apiKey: string;
+  apiKeys: Record<LLMProvider, string>;
   provider: LLMProvider;
   model: LLMModel;
   isLoaded: boolean;
@@ -18,16 +19,22 @@ interface SettingsState {
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   apiKey: '',
+  apiKeys: {
+    openai: '',
+    anthropic: '',
+    google: '',
+  },
   provider: 'openai',
-  model: 'gpt-4o',
+  model: getDefaultModelForProvider('openai'),
   isLoaded: false,
 
   setApiKey: async (apiKey: string) => {
-    set({ apiKey });
     const state = get();
+    const nextApiKeys = { ...state.apiKeys, [state.provider]: apiKey };
+    set({ apiKey, apiKeys: nextApiKeys });
     await db.settings.put({
       id: SETTINGS_ID,
-      apiKey,
+      apiKeys: nextApiKeys,
       provider: state.provider,
       model: state.model,
     });
@@ -35,10 +42,12 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   setProvider: async (provider: LLMProvider) => {
     const newModel = getDefaultModelForProvider(provider);
-    set({ provider, model: newModel });
+    const state = get();
+    const nextApiKey = state.apiKeys[provider] || '';
+    set({ provider, model: newModel, apiKey: nextApiKey });
     await db.settings.put({
       id: SETTINGS_ID,
-      apiKey: get().apiKey,
+      apiKeys: get().apiKeys,
       provider,
       model: newModel,
     });
@@ -49,7 +58,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     const state = get();
     await db.settings.put({
       id: SETTINGS_ID,
-      apiKey: state.apiKey,
+      apiKeys: state.apiKeys,
       provider: state.provider,
       model,
     });
@@ -58,8 +67,25 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   loadSettings: async () => {
     const settings = await db.settings.get(SETTINGS_ID);
     if (settings) {
+      const hasApiKeys = 'apiKeys' in settings && !!settings.apiKeys;
+      const legacyApiKey = (settings as { apiKey?: string }).apiKey || '';
+      const storedApiKeys = hasApiKeys
+        ? settings.apiKeys
+        : {
+            openai: legacyApiKey,
+            anthropic: '',
+            google: '',
+          };
+      const normalizedApiKeys = {
+        openai: '',
+        anthropic: '',
+        google: '',
+        ...storedApiKeys,
+      };
+      const activeApiKey = normalizedApiKeys[settings.provider] || '';
       set({
-        apiKey: settings.apiKey,
+        apiKey: activeApiKey,
+        apiKeys: normalizedApiKeys,
         provider: settings.provider,
         model: settings.model || getDefaultModelForProvider(settings.provider),
         isLoaded: true,

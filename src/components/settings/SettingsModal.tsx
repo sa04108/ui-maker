@@ -16,7 +16,7 @@ const providerOptions = [
 ];
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const { apiKey, provider, model, setApiKey, setProvider, setModel } = useSettingsStore();
+  const { apiKey, apiKeys, provider, model, setApiKey, setProvider, setModel } = useSettingsStore();
   const [localApiKey, setLocalApiKey] = useState(apiKey);
   const [localProvider, setLocalProvider] = useState<LLMProvider>(provider);
   const [localModel, setLocalModel] = useState<LLMModel>(model);
@@ -30,13 +30,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const handleProviderChange = (newProvider: LLMProvider) => {
     setLocalProvider(newProvider);
     setLocalModel(getDefaultModelForProvider(newProvider));
+    setLocalApiKey(apiKeys[newProvider] || '');
   };
 
   const handleSave = async () => {
-    await setApiKey(localApiKey);
     if (localProvider !== provider) {
       await setProvider(localProvider);
     }
+    await setApiKey(localApiKey);
     await setModel(localModel);
     onClose();
   };
